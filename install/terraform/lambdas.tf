@@ -30,7 +30,6 @@ resource "aws_lambda_permission" "api_gateway" {
   source_arn = "${aws_api_gateway_rest_api.approuver.execution_arn}/*/*/*"
 }
 
-
 // WEBSOCKETS
 
 data "archive_file" "websocket" {

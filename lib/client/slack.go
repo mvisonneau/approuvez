@@ -1,7 +1,9 @@
 package client
 
 import (
+	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/nlopes/slack"
 )
@@ -17,31 +19,83 @@ func (c *Client) GetSlackUser(ref string) (*slack.User, error) {
 	return c.Slack.GetUserInfo(ref)
 }
 
-func generateMessageBlocks() []slack.Block {
-	// Header Section
-	headerText := slack.NewTextBlockObject("mrkdwn", "Releasing foo app into dev", false, false)
+// GenerateMessageBlocks compute the message blocks
+func (c *Client) GenerateMessageBlocks(triggerrer *slack.User, reviewers map[string]*slack.User, decisions map[string]bool) []slack.Block {
+	headerText := slack.NewTextBlockObject("mrkdwn", c.Config.Slack.Message, false, false)
 	headerSection := slack.NewSectionBlock(headerText, nil, nil)
 
-	// Fields
-	typeField := slack.NewTextBlockObject("mrkdwn", "*Triggered by:* @max", false, false)
-	fieldSlice := make([]*slack.TextBlockObject, 0)
-	fieldSlice = append(fieldSlice, typeField)
+	triggerrerText := slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Triggered by:* <@%s>", triggerrer.ID), false, false)
+	triggerrerSection := slack.NewSectionBlock(triggerrerText, nil, nil)
 
-	fieldsSection := slack.NewSectionBlock(nil, fieldSlice, nil)
-
-	approveText := slack.NewTextBlockObject("mrkdwn", "*Waiting to be approved by @max", false, false)
-	approveSection := slack.NewSectionBlock(approveText, nil, nil)
+	reviewersText := slack.NewTextBlockObject("mrkdwn", c.computeReviewersText(reviewers, decisions), false, false)
+	reviewersSection := slack.NewSectionBlock(reviewersText, nil, nil)
 
 	return []slack.Block{
 		headerSection,
-		fieldsSection,
-		approveSection,
+		triggerrerSection,
+		reviewersSection,
 	}
 }
 
-func getEphemeralMessageActionBlock(permalink string) *slack.ActionBlock {
-	approveOrDenyBtn := slack.NewButtonBlockElement("", "approve", slack.NewTextBlockObject("plain_text", "Approve or Deny", false, false))
-	approveOrDenyBtn.URL = permalink
-	discardBtn := slack.NewButtonBlockElement("", "discard", slack.NewTextBlockObject("plain_text", "Discard", false, false))
-	return slack.NewActionBlock("", approveOrDenyBtn, discardBtn)
+func (c *Client) computeReviewersText(reviewers map[string]*slack.User, decisions map[string]bool) (msg string) {
+	remainers, approvers, deniers := []string{}, []string{}, []string{}
+
+	// Find all the reviewers which have not replied yet
+	for userID := range reviewers {
+		if _, ok := decisions[userID]; !ok {
+			remainers = append(remainers, fmt.Sprintf("<@%s>", userID))
+		}
+	}
+
+	// Find all the reviewers which have approved or denied
+	if len(decisions) > 0 {
+		for userID, d := range decisions {
+			if d {
+				approvers = append(approvers, fmt.Sprintf("<@%s>", userID))
+			} else {
+				deniers = append(deniers, fmt.Sprintf("<@%s>", userID))
+			}
+		}
+
+		if len(approvers) > 0 {
+			msg += fmt.Sprintf("✅ approved by %s\n", strings.Join(approvers, ", "))
+		}
+
+		if len(deniers) > 0 {
+			msg += fmt.Sprintf("❌ denied by %s", strings.Join(deniers, ", "))
+			return
+		}
+	}
+
+	if len(remainers) > 0 {
+		msg += fmt.Sprintf("waiting to be approved by %s", strings.Join(remainers, ", "))
+	}
+
+	return
+}
+
+// SubmitCancellationMessages ..
+func (c *Client) SubmitCancellationMessages(messages *Messages) error {
+	// TODO: Do not replace this message entirely
+	headerText := slack.NewTextBlockObject("mrkdwn", c.Config.Slack.Message, false, false)
+	headerSection := slack.NewSectionBlock(headerText, nil, nil)
+
+	cancelText := slack.NewTextBlockObject("mrkdwn", "🐛 oops, this one got cancelled! 🤷‍♂️", false, false)
+	cancelSection := slack.NewSectionBlock(cancelText, nil, nil)
+
+	_, _, _, err := c.Slack.UpdateMessage(messages.Channel.ChannelID, messages.Channel.MessageTimestamp, slack.MsgOptionBlocks(headerSection, cancelSection))
+	if err != nil {
+		return err
+	}
+
+	for _, m := range messages.Users {
+		if _, ok := m["action"]; ok {
+			_, _, _, err = c.Slack.UpdateMessage(m["action"].ChannelID, m["action"].MessageTimestamp, slack.MsgOptionText("🐛 oops, this one got cancelled! 🤷‍♂️", false), slack.MsgOptionAttachments(slack.Attachment{}))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

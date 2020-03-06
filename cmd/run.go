@@ -2,7 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/mvisonneau/approuvez/lib/client"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
 
@@ -24,53 +28,122 @@ func Run(ctx *cli.Context) (int, error) {
 	}
 
 	// Validate we can find all users in slack
-	slackUserTriggerrer, err := c.GetSlackUser(c.Config.Triggerrer)
+	triggerrer, err := c.GetSlackUser(c.Config.Triggerrer)
 	if err != nil {
 		return 1, err
 	}
 
-	log.Debugf("found triggerrer slack user ID for %s: %s", c.Config.Triggerrer, slackUserTriggerrer.ID)
+	log.Debugf("found triggerrer slack user ID for %s: %s", c.Config.Triggerrer, triggerrer.ID)
 
-	slackUserReviewers := map[string]*slack.User{}
+	reviewers := map[string]*slack.User{}
 	for _, u := range c.Config.Reviewers {
 		slackUser, err := c.GetSlackUser(u)
 		if err != nil {
 			return 1, err
 		}
-		slackUserReviewers[slackUser.ID] = slackUser
+		reviewers[slackUser.ID] = slackUser
 		log.Debugf("found reviewer slack user ID for %s : %s", u, slackUser.ID)
 	}
 
-	attachment := slack.Attachment{
-		Title:      fmt.Sprintf("%s ( triggerred by @%s)", c.Config.Slack.Message, slackUserTriggerrer.ID),
-		CallbackID: connectionID,
-		Color:      "#3AA3E3",
-		Actions: []slack.AttachmentAction{
-			slack.AttachmentAction{
-				Name:  "approve",
-				Text:  "Approve",
-				Type:  "button",
-				Style: "primary",
-			},
-			slack.AttachmentAction{
-				Name:  "deny",
-				Text:  "Deny",
-				Type:  "button",
-				Style: "danger",
-			},
-		},
+	// Initialise a messages variable to store the references to every message we send
+	messages := client.Messages{}
+	messages.Users = map[string]map[string]*client.MessageRef{}
+
+	interruptChan := make(chan os.Signal)
+	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-interruptChan
+		c.SubmitCancellationMessages(&messages)
+		log.Fatal("received interrupt, exiting with error 1")
+	}()
+
+	// Send Message
+	channelID, messageTimestamp, err := c.Slack.PostMessage(c.Config.Slack.Channel, slack.MsgOptionBlocks(c.GenerateMessageBlocks(triggerrer, reviewers, map[string]bool{})...))
+	if err != nil {
+		if err := c.SubmitCancellationMessages(&messages); err != nil {
+			return 1, err
+		}
+		return 1, err
 	}
 
-	channelID, messageTimestamp, err := c.Slack.PostMessage(c.Config.Slack.Channel, slack.MsgOptionAttachments(attachment))
-	if err != nil {
-		log.Fatal(err)
+	messages.Channel = &client.MessageRef{
+		ChannelID:        channelID,
+		MessageTimestamp: messageTimestamp,
 	}
 
-	log.Debug(channelID)
-	log.Debug(messageTimestamp)
-
-	ok, err := c.ListenForApprovals(slackUserReviewers)
+	permalink, err := c.Slack.GetPermalink(&slack.PermalinkParameters{Channel: channelID, Ts: messageTimestamp})
 	if err != nil {
+		if err := c.SubmitCancellationMessages(&messages); err != nil {
+			return 1, err
+		}
+		return 1, err
+	}
+
+	for userID := range reviewers {
+		messages.Users[userID] = map[string]*client.MessageRef{}
+
+		channelID, messageTimestamp, err := c.Slack.PostMessage(userID, slack.MsgOptionText(permalink, false))
+		if err != nil {
+			if err := c.SubmitCancellationMessages(&messages); err != nil {
+				return 1, err
+			}
+			return 1, err
+		}
+
+		messages.Users[userID]["link"] = &client.MessageRef{
+			ChannelID:        channelID,
+			MessageTimestamp: messageTimestamp,
+		}
+
+		attachment := slack.Attachment{
+			Title:      fmt.Sprintf("%s ( triggerred by <@%s>)", c.Config.Slack.Message, triggerrer.ID),
+			CallbackID: connectionID,
+			Color:      "#3AA3E3",
+			Actions: []slack.AttachmentAction{
+				slack.AttachmentAction{
+					Name:  "approve",
+					Text:  "Approve",
+					Type:  "button",
+					Style: "primary",
+				},
+				slack.AttachmentAction{
+					Name:  "deny",
+					Text:  "Deny",
+					Type:  "button",
+					Style: "danger",
+				},
+			},
+		}
+
+		channelID, messageTimestamp, err = c.Slack.PostMessage(userID, slack.MsgOptionAttachments(attachment))
+		if err != nil {
+			if err := c.SubmitCancellationMessages(&messages); err != nil {
+				return 1, err
+			}
+			return 1, err
+		}
+
+		messages.Users[userID]["action"] = &client.MessageRef{
+			ChannelID:        channelID,
+			MessageTimestamp: messageTimestamp,
+		}
+
+		// permalink, err := c.Slack.GetPermalink(&slack.PermalinkParameters{Channel: channelID, Ts: messageTimestamp})
+		// if err != nil {
+		// 	return 1, err
+		// }
+
+		// _, err = c.Slack.PostEphemeral(c.Config.Slack.Channel, userID, slack.MsgOptionBlocks(client.GetEphemeralMessageActionBlock(permalink)))
+		// if err != nil {
+		// 	return 1, err
+		// }
+	}
+
+	ok, err := c.ListenForApprovals(&messages, triggerrer, reviewers)
+	if err != nil {
+		if err := c.SubmitCancellationMessages(&messages); err != nil {
+			return 1, err
+		}
 		return 1, err
 	}
 
