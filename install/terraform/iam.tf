@@ -2,8 +2,6 @@
 // LAMBDA
 //
 
-data "aws_caller_identity" "current" {}
-
 // create a role for our lambda function
 resource "aws_iam_role" "approuver_lambda_function" {
   name = "ApprouverLambdaFunction"
