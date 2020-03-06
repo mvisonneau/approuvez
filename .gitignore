@@ -1,0 +1,4 @@
+install/terraform/*
+!install/terraform/*.tf
+!install/terraform/*.example
+install/terraform/terraform.tf
