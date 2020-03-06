@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -96,7 +95,6 @@ func Run(ctx *cli.Context) (int, error) {
 		}
 
 		attachment := slack.Attachment{
-			Title:      fmt.Sprintf("%s ( triggerred by <@%s>)", c.Config.Slack.Message, triggerrer.ID),
 			CallbackID: connectionID,
 			Color:      "#3AA3E3",
 			Actions: []slack.AttachmentAction{
@@ -127,16 +125,6 @@ func Run(ctx *cli.Context) (int, error) {
 			ChannelID:        channelID,
 			MessageTimestamp: messageTimestamp,
 		}
-
-		// permalink, err := c.Slack.GetPermalink(&slack.PermalinkParameters{Channel: channelID, Ts: messageTimestamp})
-		// if err != nil {
-		// 	return 1, err
-		// }
-
-		// _, err = c.Slack.PostEphemeral(c.Config.Slack.Channel, userID, slack.MsgOptionBlocks(client.GetEphemeralMessageActionBlock(permalink)))
-		// if err != nil {
-		// 	return 1, err
-		// }
 	}
 
 	ok, err := c.ListenForApprovals(&messages, triggerrer, reviewers)

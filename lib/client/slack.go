@@ -99,3 +99,47 @@ func (c *Client) SubmitCancellationMessages(messages *Messages) error {
 
 	return nil
 }
+
+// SubmitApprovalMessages ..
+func (c *Client) SubmitApprovalMessages(messages *Messages, triggerrer *slack.User, reviewers map[string]*slack.User, decisions map[string]bool, userID string) error {
+	// Update the status of the message on Slack
+	_, _, _, err := c.Slack.UpdateMessage(messages.Channel.ChannelID, messages.Channel.MessageTimestamp, slack.MsgOptionBlocks(c.GenerateMessageBlocks(triggerrer, reviewers, decisions)...))
+	if err != nil {
+		return err
+	}
+
+	// Replace the buttons
+	_, _, _, err = c.Slack.UpdateMessage(messages.Users[userID]["action"].ChannelID, messages.Users[userID]["action"].MessageTimestamp, slack.MsgOptionText("you approved ✅ !", false), slack.MsgOptionAttachments(slack.Attachment{}))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SubmitDenialMessages ..
+func (c *Client) SubmitDenialMessages(messages *Messages, triggerrer *slack.User, reviewers map[string]*slack.User, decisions map[string]bool, userID string) error {
+	// Update the status of the message on Slack
+	_, _, _, err := c.Slack.UpdateMessage(messages.Channel.ChannelID, messages.Channel.MessageTimestamp, slack.MsgOptionBlocks(c.GenerateMessageBlocks(triggerrer, reviewers, decisions)...))
+	if err != nil {
+		return err
+	}
+
+	// Remove buttons for current users
+	_, _, _, err = c.Slack.UpdateMessage(messages.Users[userID]["action"].ChannelID, messages.Users[userID]["action"].MessageTimestamp, slack.MsgOptionText("you denied ❌ !", false), slack.MsgOptionAttachments(slack.Attachment{}))
+	if err != nil {
+		return err
+	}
+
+	// Remove buttons for other reviewers
+	for u, m := range messages.Users {
+		if u != userID {
+			_, _, _, err = c.Slack.UpdateMessage(m["action"].ChannelID, m["action"].MessageTimestamp, slack.MsgOptionText(fmt.Sprintf("denied by <@%s> ❌ !", userID), false), slack.MsgOptionAttachments(slack.Attachment{}))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
