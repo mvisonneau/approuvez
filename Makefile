@@ -83,7 +83,7 @@ clean: ## Remove binary if it exists
 .PHONY: coverage
 coverage: ## Generates coverage report
 	rm -rf *.out
-	go test -v ./... -coverpkg=./... -coverprofile=coverage.out
+	go test -v $(TEST_FILES) -coverpkg=$(TEST_FILES) -coverprofile=coverage.out
 
 .PHONY: show-coverage
 show-coverage: ## Display coverage report in browser
