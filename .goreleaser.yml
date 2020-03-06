@@ -25,11 +25,11 @@ nfpms:
   - maintainer: &author
       Maxime VISONNEAU <maxime.visonneau@gmail.com>
     description: &description
-      Safely Store Super Sensitive Stuff
+      command line helper to obtain live confirmation from relevant people 
     license: &license
       Apache 2.0
     homepage: &homepage
-      https://github.com/mvisonneau/s5
+      https://github.com/mvisonneau/approuvez
     vendor: *author
     formats:
       - deb
