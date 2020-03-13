@@ -11,7 +11,7 @@ import (
 
 func getAPIGatewayManagementAPIClient() *apigatewaymanagementapi.ApiGatewayManagementApi {
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String("eu-west-3"),
+		Region: aws.String(os.Getenv("AWS_REGION")),
 	})
 	if err != nil {
 		log.Fatalln("Unable to create AWS session", err.Error())
