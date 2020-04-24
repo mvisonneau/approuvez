@@ -25,7 +25,7 @@ nfpms:
   - maintainer: &author
       Maxime VISONNEAU <maxime.visonneau@gmail.com>
     description: &description
-      command line helper to obtain live confirmation from relevant people 
+      CLI helper client to obtain live confirmation from relevant people 
     license: &license
       Apache 2.0
     homepage: &homepage
