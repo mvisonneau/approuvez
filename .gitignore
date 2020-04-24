@@ -1,10 +1,10 @@
 approuvez
-!install/terraform/modules/approuvez
-install/terraform/modules/approuvez/*
-!install/terraform/modules/approuvez/*.tf
-!install/terraform/modules/approuvez/custom_domains
+!terraform/modules/approuvez
+terraform/modules/approuvez/*
+!terraform/modules/approuvez/*.tf
+!terraform/modules/approuvez/custom_domains
+**/.terraform
+terraform/terraform.tf
 coverage.out
 dist
-**/.terraform
-install/terraform/terraform.tf
 vendor
