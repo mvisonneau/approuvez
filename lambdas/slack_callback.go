@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/apigatewaymanagementapi"
-	"github.com/nlopes/slack"
+	"github.com/slack-go/slack"
 )
 
 func slackCallback(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {

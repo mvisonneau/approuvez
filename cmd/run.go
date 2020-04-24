@@ -7,8 +7,8 @@ import (
 	"syscall"
 
 	"github.com/mvisonneau/approuvez/lib/client"
-	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
+	"github.com/slack-go/slack"
 
 	"github.com/urfave/cli"
 )
