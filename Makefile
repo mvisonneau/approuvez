@@ -65,7 +65,7 @@ build-linux-amd64: ## Build the binaries
 
 build-lambdas: ## Build the lambda functions
 	for f in websocket slack_callback ; do \
-    env GOOS=linux GOARCH=amd64 go build -o install/terraform/$$f lambdas/$$f.go lambdas/api_gateway_management_api.go; \
+    env GOOS=linux GOARCH=amd64 go build -o install/terraform/modules/approuvez/$$f lambdas/$$f.go lambdas/api_gateway_management_api.go; \
 	done
 
 .PHONY: release

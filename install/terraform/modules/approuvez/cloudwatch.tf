@@ -3,30 +3,28 @@ resource "aws_api_gateway_account" "default" {
   cloudwatch_role_arn = aws_iam_role.api_gateway.arn
 
   depends_on = [
-    aws_iam_role.api_gateway,
     aws_iam_role_policy_attachment.api_gateway_cloudwatch_push_logs,
   ]
 }
 
 // create a role for API gateways
-resource "aws_iam_role" "api_gateway" {
-  name = "APIGatewayCloudwatchPushLogs"
+data "aws_iam_policy_document" "api_gateway_assume_role_policy" {
+  statement {
+    principals {
+      type = "Service"
 
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "apigateway.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
+      identifiers = [
+        "apigateway.amazonaws.com",
+      ]
     }
-  ]
+
+    actions = ["sts:AssumeRole"]
+  }
 }
-EOF
+
+resource "aws_iam_role" "api_gateway" {
+  name               = "APIGatewayCloudwatchPushLogs"
+  assume_role_policy = data.aws_iam_policy_document.api_gateway_assume_role_policy.json
 }
 
 // assign AmazonAPIGatewayPushToCloudWatchLogs policy

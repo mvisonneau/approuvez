@@ -1,28 +1,20 @@
 ##
-## TERRAFORM REMOTE STATE
-##
-
-terraform {
-  backend "remote" {
-    hostname     = "app.terraform.io"
-    organization = "foo"
-
-    workspaces {
-      name = "approuvez"
-    }
-  }
-}
-
-##
 ## PROVISIONING
 ##
 
 provider "aws" {
-  version = "~> 2.47.0"
-  region  = "eu-west-1"
+  version = "~> 2.59.0"
+  region  = "eu-west-3"
 }
 
-locals {
-  api_gateway_websocket_arn = "arn:aws:execute-api:eu-west-1:xxxxxxx:yyyyyy/*"
-  api_gateway_websocket_endpoint = "yyyyy.execute-api.eu-west-1.amazonaws.com/prod"
+##
+# MODULES
+##
+
+module "approuvez" {
+  source = "./modules/approuvez"
 }
+
+// module "approuvez_custom_domains" {
+//   source = "modules/approuvez"
+// }
