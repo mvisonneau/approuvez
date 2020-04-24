@@ -65,3 +65,7 @@ If you want to build and/or release your own version of `approuvez`, you need th
 ## Contribute
 
 Contributions are more than welcome! Feel free to submit a [PR](https://github.com/mvisonneau/approuvez/pulls).
+
+## Fun fact
+
+`approuvez` is a conjugation of the verb [approuver](https://www.larousse.fr/conjugaison/francais/approuver/518) in French 🇫🇷, equivalent to `approve` in English 🇬🇧
