@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -26,22 +27,22 @@ func Run(ctx *cli.Context) (int, error) {
 		return 1, err
 	}
 
-	// Validate we can find all users in slack
+	log.Debugf("Fetching users on Slack")
 	triggerrer, err := c.GetSlackUser(c.Config.Triggerrer)
 	if err != nil {
-		return 1, err
+		return 1, fmt.Errorf("slack error: %v", err)
 	}
 
-	log.Debugf("found triggerrer slack user ID for %s: %s", c.Config.Triggerrer, triggerrer.ID)
+	log.Debugf("Found triggerrer slack user ID for %s: %s", c.Config.Triggerrer, triggerrer.ID)
 
 	reviewers := map[string]*slack.User{}
 	for _, u := range c.Config.Reviewers {
 		slackUser, err := c.GetSlackUser(u)
 		if err != nil {
-			return 1, err
+			return 1, fmt.Errorf("slack error: %v", err)
 		}
 		reviewers[slackUser.ID] = slackUser
-		log.Debugf("found reviewer slack user ID for %s : %s", u, slackUser.ID)
+		log.Debugf("Found reviewer slack user ID for %s : %s", u, slackUser.ID)
 	}
 
 	// Initialise a messages variable to store the references to every message we send
@@ -98,13 +99,13 @@ func Run(ctx *cli.Context) (int, error) {
 			CallbackID: connectionID,
 			Color:      "#3AA3E3",
 			Actions: []slack.AttachmentAction{
-				slack.AttachmentAction{
+				{
 					Name:  "approve",
 					Text:  "Approve",
 					Type:  "button",
 					Style: "primary",
 				},
-				slack.AttachmentAction{
+				{
 					Name:  "deny",
 					Text:  "Deny",
 					Type:  "button",

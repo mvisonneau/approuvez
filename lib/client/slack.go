@@ -6,16 +6,18 @@ import (
 	"strings"
 
 	"github.com/nlopes/slack"
+	log "github.com/sirupsen/logrus"
 )
 
 // GetSlackUser returns a slack user based on its email, name or ID
 func (c *Client) GetSlackUser(ref string) (*slack.User, error) {
-	// Validate we have passed an email
 	re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 	if re.MatchString(ref) {
+		log.Debugf("Looking up Slack user '%s' using email", ref)
 		return c.Slack.GetUserByEmail(ref)
 	}
 
+	log.Debugf("Looking up Slack user '%s' using ID", ref)
 	return c.Slack.GetUserInfo(ref)
 }
 

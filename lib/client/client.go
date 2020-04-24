@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/nlopes/slack"
@@ -52,10 +53,16 @@ type MessageRef struct {
 // NewClient instantiate a Client from a provider Config
 func NewClient(input *NewClientInput) (c *Client, err error) {
 	var ws *websocket.Conn
-	ws, _, err = websocket.DefaultDialer.Dial(input.WebsocketEndpoint, nil)
+	dialer := websocket.Dialer{
+		HandshakeTimeout: 5 * time.Second,
+	}
+
+	log.Debugf("Connecting to websocket %s", input.WebsocketEndpoint)
+	ws, _, err = dialer.Dial(input.WebsocketEndpoint, nil)
 	if err != nil {
 		return
 	}
+	log.Infof("Successfully connected to websocket endpoint")
 
 	c = &Client{
 		Slack:     slack.New(input.SlackToken),
