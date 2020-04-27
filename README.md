@@ -1,4 +1,4 @@
-# approuvez
+# ✅ approuvez
 
 [![GoDoc](https://godoc.org/github.com/mvisonneau/approuvez?status.svg)](https://godoc.org/github.com/mvisonneau/approuvez)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mvisonneau/approuvez)](https://goreportcard.com/report/github.com/mvisonneau/approuvez)
@@ -6,7 +6,7 @@
 [![Build Status](https://cloud.drone.io/api/badges/mvisonneau/approuvez/status.svg)](https://cloud.drone.io/mvisonneau/approuvez)
 [![Coverage Status](https://coveralls.io/repos/github/mvisonneau/approuvez/badge.svg?branch=master)](https://coveralls.io/github/mvisonneau/approuvez?branch=master)
 
-> ✅ Obtain live confirmation from people
+> Obtain live confirmation from people
 
 ## Usage
 
