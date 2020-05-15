@@ -40,8 +40,8 @@ type Client struct {
 
 // Messages ..
 type Messages struct {
-	Channel *MessageRef
-	Users   map[string]map[string]*MessageRef
+	Channel MessageRef
+	Users   map[string]map[string]MessageRef
 }
 
 // MessageRef can be used to store references to sent messages
@@ -57,12 +57,22 @@ func NewClient(input *NewClientInput) (c *Client, err error) {
 		HandshakeTimeout: 5 * time.Second,
 	}
 
-	log.Debugf("Connecting to websocket %s", input.WebsocketEndpoint)
+	log.WithFields(
+		log.Fields{
+			"websocket-endpoint": input.WebsocketEndpoint,
+		},
+	).Debug("connecting to websocket")
+
 	ws, _, err = dialer.Dial(input.WebsocketEndpoint, nil)
 	if err != nil {
 		return
 	}
-	log.Infof("Successfully connected to websocket endpoint")
+
+	log.WithFields(
+		log.Fields{
+			"websocket-endpoint": input.WebsocketEndpoint,
+		},
+	).Info("connected to websocket endpoint successfully")
 
 	c = &Client{
 		Slack:     slack.New(input.SlackToken),
@@ -85,11 +95,11 @@ func (c *Client) ListenForApprovals(messages *Messages, triggerrer *slack.User, 
 	requiredApprovals := c.getRequiredApprovals(reviewers)
 
 	for requiredApprovals > 0 {
-		if requiredApprovals == 1 {
-			log.Info("1 more approval required, waiting for it..")
-		} else {
-			log.Infof("%d more approvals required, waiting for it..", requiredApprovals)
-		}
+		log.WithFields(
+			log.Fields{
+				"required-approvals": requiredApprovals,
+			},
+		).Info("waiting for approval(s)")
 
 		userID, decision, err := c.readResponse()
 		if err != nil {
@@ -97,13 +107,22 @@ func (c *Client) ListenForApprovals(messages *Messages, triggerrer *slack.User, 
 		}
 
 		if _, ok := reviewers[userID]; !ok {
-			log.Warnf("Received a response from User ID '%s' but this user is not part for the allowed reviewers, skipping..", userID)
+			log.WithFields(
+				log.Fields{
+					"user-id": userID,
+				},
+			).Warn("received a response from a user not part of the allowed reviewers, skipping event")
 			continue
 		}
 
 		switch decision {
 		case "approve":
-			log.Infof("approved by %s!", reviewers[userID].Name)
+			log.WithFields(
+				log.Fields{
+					"user-id":   userID,
+					"user-name": reviewers[userID].Name,
+				},
+			).Info("received an approval response from Slack")
 			decisions[userID] = true
 			requiredApprovals--
 			if err := c.SubmitApprovalMessages(messages, triggerrer, reviewers, decisions, userID); err != nil {
@@ -111,7 +130,12 @@ func (c *Client) ListenForApprovals(messages *Messages, triggerrer *slack.User, 
 			}
 
 		case "deny":
-			log.Infof("denied by %s! exiting", reviewers[userID].Name)
+			log.WithFields(
+				log.Fields{
+					"user-id":   userID,
+					"user-name": reviewers[userID].Name,
+				},
+			).Info("received a denial response from Slack, exiting")
 			decisions[userID] = false
 
 			if err := c.SubmitDenialMessages(messages, triggerrer, reviewers, decisions, userID); err != nil {
@@ -120,7 +144,13 @@ func (c *Client) ListenForApprovals(messages *Messages, triggerrer *slack.User, 
 
 			return false, nil
 		default:
-			log.Infof("unable to interprete decision '%s' 🤷‍♂️", decision)
+			log.WithFields(
+				log.Fields{
+					"user-id":   userID,
+					"user-name": reviewers[userID].Name,
+					"decision":  decision,
+				},
+			).Error("received an unknown response decision from Slack")
 		}
 	}
 
@@ -158,6 +188,11 @@ func (c *Client) readResponse() (userID string, decision string, err error) {
 
 	userID = s[0]
 	decision = s[1]
-	log.Debugf("response - user id: %s / decision %s", userID, decision)
+	log.WithFields(
+		log.Fields{
+			"user-id":  userID,
+			"decision": decision,
+		},
+	).Debug("received a response from Slack")
 	return
 }

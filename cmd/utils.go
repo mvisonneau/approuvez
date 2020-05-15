@@ -42,7 +42,10 @@ func configure(ctx *cli.Context) (c *client.Client, err error) {
 }
 
 func exit(exitCode int, err error) *cli.ExitError {
-	defer log.Debugf("Executed in %s, exiting..", time.Since(start))
+	defer log.WithFields(
+		"execution-duration": time.Since(start),
+	).Debug("exiting..")
+
 	if err != nil {
 		log.Error(err.Error())
 	}

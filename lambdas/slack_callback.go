@@ -14,6 +14,10 @@ import (
 	"github.com/slack-go/slack"
 )
 
+func main() {
+	lambda.Start(slackCallback)
+}
+
 func slackCallback(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var p slack.InteractionCallback
 	unescapedBody, _ := url.QueryUnescape(string(req.Body)[8:])
@@ -44,8 +48,4 @@ func slackCallback(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 	}, nil
-}
-
-func main() {
-	lambda.Start(slackCallback)
 }

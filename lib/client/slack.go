@@ -13,11 +13,21 @@ import (
 func (c *Client) GetSlackUser(ref string) (*slack.User, error) {
 	re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 	if re.MatchString(ref) {
-		log.Debugf("Looking up Slack user '%s' using email", ref)
+		log.WithFields(
+			log.Fields{
+				"user-string": ref,
+				"used-method": "email",
+			},
+		).Debug("looking up slack user")
 		return c.Slack.GetUserByEmail(ref)
 	}
 
-	log.Debugf("Looking up Slack user '%s' using ID", ref)
+	log.WithFields(
+		log.Fields{
+			"user-string": ref,
+			"used-method": "id",
+		},
+	).Debug("looking up slack user")
 	return c.Slack.GetUserInfo(ref)
 }
 
