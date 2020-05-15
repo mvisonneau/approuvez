@@ -72,8 +72,20 @@ func Run(ctx *cli.Context) (int, error) {
 	}()
 
 	// Send Message
+	log.WithFields(
+		log.Fields{
+			"channel": c.Config.Slack.Channel,
+		},
+	).Debug("posting notification message")
 	channelID, messageTimestamp, err := c.Slack.PostMessage(c.Config.Slack.Channel, slack.MsgOptionBlocks(c.GenerateMessageBlocks(triggerrer, reviewers, map[string]bool{})...))
 	if err != nil {
+		log.WithFields(
+			log.Fields{
+				"channel": c.Config.Slack.Channel,
+				"error":   err.Error(),
+			},
+		).Error("posting notification message")
+
 		if err := c.SubmitCancellationMessages(messages); err != nil {
 			return 1, err
 		}
@@ -85,19 +97,51 @@ func Run(ctx *cli.Context) (int, error) {
 		MessageTimestamp: messageTimestamp,
 	}
 
+	log.WithFields(
+		log.Fields{
+			"channel":           channelID,
+			"message-timestamp": messageTimestamp,
+		},
+	).Debug("getting permalink")
 	permalink, err := c.Slack.GetPermalink(&slack.PermalinkParameters{Channel: channelID, Ts: messageTimestamp})
 	if err != nil {
+		log.WithFields(
+			log.Fields{
+				"channel":           channelID,
+				"message-timestamp": messageTimestamp,
+				"error":             err.Error(),
+			},
+		).Error("getting permalink")
+
 		if err := c.SubmitCancellationMessages(messages); err != nil {
 			return 1, err
 		}
 		return 1, err
 	}
 
-	for userID := range reviewers {
-		messages.Users[userID] = map[string]client.MessageRef{}
+	log.WithFields(
+		log.Fields{
+			"permalink": permalink,
+		},
+	).Debug("found permalink")
 
+	for userID := range reviewers {
+		log.WithFields(
+			log.Fields{
+				"user-id": userID,
+			},
+		).Debug("posting message link to user")
+
+		messages.Users[userID] = map[string]client.MessageRef{}
 		channelID, messageTimestamp, err := c.Slack.PostMessage(userID, slack.MsgOptionText(permalink, false))
 		if err != nil {
+			log.WithFields(
+				log.Fields{
+					"user-id": userID,
+					"error":   err.Error(),
+				},
+			).Error("posting message link to user")
+
 			if err := c.SubmitCancellationMessages(messages); err != nil {
 				return 1, err
 			}
@@ -112,6 +156,7 @@ func Run(ctx *cli.Context) (int, error) {
 		attachment := slack.Attachment{
 			CallbackID: connectionID,
 			Color:      "#3AA3E3",
+			Text:       "what do you reckon?",
 			Actions: []slack.AttachmentAction{
 				{
 					Name:  "approve",
@@ -128,8 +173,19 @@ func Run(ctx *cli.Context) (int, error) {
 			},
 		}
 
+		log.WithFields(
+			log.Fields{
+				"user-id": userID,
+			},
+		).Debug("posting actions message to user")
 		channelID, messageTimestamp, err = c.Slack.PostMessage(userID, slack.MsgOptionAttachments(attachment))
 		if err != nil {
+			log.WithFields(
+				log.Fields{
+					"user-id": userID,
+					"error":   err.Error(),
+				},
+			).Error("posting actions message to user")
 			if err := c.SubmitCancellationMessages(messages); err != nil {
 				return 1, err
 			}
@@ -142,8 +198,14 @@ func Run(ctx *cli.Context) (int, error) {
 		}
 	}
 
+	log.Debug("listening for Slack responses")
 	ok, err := c.ListenForApprovals(messages, triggerrer, reviewers)
 	if err != nil {
+		log.WithFields(
+			log.Fields{
+				"error": err.Error(),
+			},
+		).Error("listening for Slack responses")
 		if err := c.SubmitCancellationMessages(messages); err != nil {
 			return 1, err
 		}

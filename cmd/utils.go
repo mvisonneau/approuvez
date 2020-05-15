@@ -43,7 +43,9 @@ func configure(ctx *cli.Context) (c *client.Client, err error) {
 
 func exit(exitCode int, err error) *cli.ExitError {
 	defer log.WithFields(
-		"execution-duration": time.Since(start),
+		log.Fields{
+			"execution-duration": time.Since(start),
+		},
 	).Debug("exiting..")
 
 	if err != nil {
