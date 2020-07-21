@@ -1,6 +1,8 @@
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/aws/aws-lambda-go v1.16.0 h1:9+Pp1/6cjEXYhwadp8faFXKSOWt7/tHRCnQxQmKvVwM=
 github.com/aws/aws-lambda-go v1.16.0/go.mod h1:FEwgPLE6+8wcGBTe5cJN3JWurd1Ztm9zN4jsXsjzKKw=
+github.com/aws/aws-lambda-go v1.18.0 h1:13AfxzFoPlFjOzXHbRnKuTbteCzHbu4YQgKONNhWcmo=
+github.com/aws/aws-lambda-go v1.18.0/go.mod h1:FEwgPLE6+8wcGBTe5cJN3JWurd1Ztm9zN4jsXsjzKKw=
 github.com/aws/aws-sdk-go v1.30.13 h1:fBDYaJzInlOHpoKFaTEze5MvZ/pw7mhYkzDE8HAmD74=
 github.com/aws/aws-sdk-go v1.30.13/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=
 github.com/aws/aws-sdk-go v1.33.9 h1:nkC8YxL1nxwshIoO3UM2486Ph+zs7IZWjhRHjmXeCPw=
