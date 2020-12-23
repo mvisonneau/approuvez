@@ -4,9 +4,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/mvisonneau/approuvez/lib/client"
+	"github.com/mvisonneau/approuvez/pkg/client"
 	"github.com/mvisonneau/go-helpers/logger"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -16,37 +16,36 @@ var start time.Time
 func configure(ctx *cli.Context) (c *client.Client, err error) {
 	start = ctx.App.Metadata["startTime"].(time.Time)
 
-	lc := &logger.Config{
-		Level:  ctx.GlobalString("log-level"),
-		Format: ctx.GlobalString("log-format"),
-	}
-
-	if err = lc.Configure(); err != nil {
+	// Configure logger
+	if err = logger.Configure(logger.Config{
+		Level:  ctx.String("log-level"),
+		Format: ctx.String("log-format"),
+	}); err != nil {
 		return
 	}
 
 	for _, i := range []string{"endpoint", "slack-token", "slack-message", "slack-channel", "triggerrer"} {
-		assertStringVariableDefined(ctx, i, ctx.GlobalString(i))
+		assertStringVariableDefined(ctx, i, ctx.String(i))
 	}
-	assertStringSliceVariableNotEmpty(ctx, "reviewer", ctx.GlobalStringSlice("reviewer"))
+	assertStringSliceVariableNotEmpty(ctx, "reviewer", ctx.StringSlice("reviewer"))
 
 	return client.NewClient(&client.NewClientInput{
-		SlackChannel:      ctx.GlobalString("slack-channel"),
-		SlackMessage:      ctx.GlobalString("slack-message"),
-		SlackToken:        ctx.GlobalString("slack-token"),
-		WebsocketEndpoint: ctx.GlobalString("endpoint"),
-		Triggerrer:        ctx.GlobalString("triggerrer"),
-		Reviewers:         ctx.GlobalStringSlice("reviewer"),
-		RequiredApprovals: ctx.GlobalInt("required-approvals"),
+		SlackChannel:      ctx.String("slack-channel"),
+		SlackMessage:      ctx.String("slack-message"),
+		SlackToken:        ctx.String("slack-token"),
+		WebsocketEndpoint: ctx.String("endpoint"),
+		Triggerrer:        ctx.String("triggerrer"),
+		Reviewers:         ctx.StringSlice("reviewer"),
+		RequiredApprovals: ctx.Int("required-approvals"),
 	})
 }
 
-func exit(exitCode int, err error) *cli.ExitError {
+func exit(exitCode int, err error) cli.ExitCoder {
 	defer log.WithFields(
 		log.Fields{
-			"execution-duration": time.Since(start),
+			"execution-time": time.Since(start),
 		},
-	).Debug("exiting..")
+	).Debug("exited..")
 
 	if err != nil {
 		log.Error(err.Error())
@@ -56,7 +55,7 @@ func exit(exitCode int, err error) *cli.ExitError {
 }
 
 // ExecWrapper gracefully logs and exits our `run` functions
-func ExecWrapper(f func(ctx *cli.Context) (int, error)) func(*cli.Context) error {
+func ExecWrapper(f func(ctx *cli.Context) (int, error)) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
 		return exit(f(ctx))
 	}
@@ -64,7 +63,7 @@ func ExecWrapper(f func(ctx *cli.Context) (int, error)) func(*cli.Context) error
 
 func assertStringVariableDefined(ctx *cli.Context, k, v string) {
 	if len(v) == 0 {
-		cli.ShowAppHelp(ctx)
+		_ = cli.ShowAppHelp(ctx)
 		log.Errorf("'--%s' must be set!", k)
 		os.Exit(2)
 	}
@@ -72,7 +71,7 @@ func assertStringVariableDefined(ctx *cli.Context, k, v string) {
 
 func assertStringSliceVariableNotEmpty(ctx *cli.Context, k string, v []string) {
 	if len(v) == 0 {
-		cli.ShowAppHelp(ctx)
+		_ = cli.ShowAppHelp(ctx)
 		log.Errorf("'--%s' must be set at least once!", k)
 		os.Exit(2)
 	}

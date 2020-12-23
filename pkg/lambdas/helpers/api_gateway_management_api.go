@@ -1,4 +1,4 @@
-package main
+package helpers
 
 import (
 	"log"
@@ -9,7 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/apigatewaymanagementapi"
 )
 
-func getAPIGatewayManagementAPIClient() *apigatewaymanagementapi.ApiGatewayManagementApi {
+// GetAPIGatewayManagementAPIClient ..
+func GetAPIGatewayManagementAPIClient() *apigatewaymanagementapi.ApiGatewayManagementApi {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(os.Getenv("AWS_REGION")),
 	})

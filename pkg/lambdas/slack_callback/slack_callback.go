@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/mvisonneau/approuvez/pkg/lambdas/helpers"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -35,7 +37,7 @@ func slackCallback(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 		}, fmt.Errorf("unable to fetch action name from payload")
 	}
 
-	a := getAPIGatewayManagementAPIClient()
+	a := helpers.GetAPIGatewayManagementAPIClient()
 	_, err := a.PostToConnection(&apigatewaymanagementapi.PostToConnectionInput{
 		ConnectionId: aws.String(p.CallbackID),
 		Data:         []byte(fmt.Sprintf("%s/%s", p.User.ID, p.ActionCallback.AttachmentActions[0].Name)),

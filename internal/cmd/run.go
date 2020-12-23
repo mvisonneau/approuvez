@@ -6,11 +6,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/mvisonneau/approuvez/lib/client"
+	"github.com/mvisonneau/approuvez/pkg/client"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/slack-go/slack"
-
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 // Run is the main entrypoint of the tool
@@ -67,7 +67,9 @@ func Run(ctx *cli.Context) (int, error) {
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-interruptChan
-		c.SubmitCancellationMessages(messages)
+		if err = c.SubmitCancellationMessages(messages); err != nil {
+			log.Error(err.Error())
+		}
 		log.Fatal("received interrupt, exiting with error 1")
 	}()
 

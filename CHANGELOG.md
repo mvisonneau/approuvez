@@ -14,4 +14,4 @@ and this project adheres to [0ver](https://0ver.org).
 - lambda function to handle websocket interactions with the clients
 - end-to-end Terraform configuration for the AWS components
 
-[Unreleased]: https://github.com/mvisonneau/approuvez/compare/0.0.1...HEAD
+[Unreleased]: https://github.com/mvisonneau/approuvez/compare/v0.0.1...HEAD

@@ -39,6 +39,11 @@ GLOBAL OPTIONS:
 
 ![approuvez_architecture](docs/images/approuvez_architecture.png)
 
+## Requirements
+
+- AWS account with lambda permissions
+- Terraform >= 0.13
+
 ## Develop / Test
 
 ```bash
@@ -69,6 +74,6 @@ If you want to build and/or release your own version of `approuvez`, you need th
 
 Contributions are more than welcome! Feel free to submit a [PR](https://github.com/mvisonneau/approuvez/pulls).
 
-## Fun fact
+## Terminology
 
 `approuvez` is a conjugation of the verb [approuver](https://www.larousse.fr/conjugaison/francais/approuver/518) in French 🇫🇷, equivalent to `approve` in English 🇬🇧

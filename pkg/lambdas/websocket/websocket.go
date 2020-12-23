@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/mvisonneau/approuvez/pkg/lambdas/helpers"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -41,7 +43,7 @@ func disconnect(req events.APIGatewayWebsocketProxyRequest) (events.APIGatewayPr
 }
 
 func unsupportedRequest(req events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
-	a := getAPIGatewayManagementAPIClient()
+	a := helpers.GetAPIGatewayManagementAPIClient()
 	_, err := a.PostToConnection(&apigatewaymanagementapi.PostToConnectionInput{
 		ConnectionId: aws.String(req.RequestContext.ConnectionID),
 		Data:         []byte("{\"error\":\"unsupported request\"}"),
@@ -59,7 +61,7 @@ func unsupportedRequest(req events.APIGatewayWebsocketProxyRequest) (events.APIG
 }
 
 func getConnectionID(req events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
-	a := getAPIGatewayManagementAPIClient()
+	a := helpers.GetAPIGatewayManagementAPIClient()
 	_, err := a.PostToConnection(&apigatewaymanagementapi.PostToConnectionInput{
 		ConnectionId: aws.String(req.RequestContext.ConnectionID),
 		Data:         []byte(req.RequestContext.ConnectionID),
