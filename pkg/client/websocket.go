@@ -1,6 +1,8 @@
 package client
 
 import (
+	"time"
+
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 )
@@ -24,4 +26,25 @@ func GetConnectionID(c *websocket.Conn) (string, error) {
 		},
 	).Info("retrieved connection ID")
 	return string(connectionID), nil
+}
+
+// KeepAlive make simple pings upon a WebSocket connection to attempt keeping it alive
+func KeepAlive(c *websocket.Conn, timeout time.Duration) {
+	ticker := time.NewTicker(timeout / 2)
+	done := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case <-done:
+				log.Warn("websocket keepalive routine stopped")
+				return
+			case <-ticker.C:
+				if err := c.WriteMessage(websocket.TextMessage, []byte("keepalive")); err != nil {
+					log.Error(err.Error())
+					return
+				}
+			}
+		}
+	}()
 }

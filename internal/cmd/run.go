@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/mvisonneau/approuvez/pkg/client"
 
@@ -26,6 +27,9 @@ func Run(ctx *cli.Context) (int, error) {
 	if err != nil {
 		return 1, err
 	}
+
+	// Keep the websocket connection alive
+	client.KeepAlive(c.Websocket, 10*time.Minute)
 
 	log.Debug("fetching Slack users")
 	triggerrer, err := c.GetSlackUser(c.Config.Triggerrer)
