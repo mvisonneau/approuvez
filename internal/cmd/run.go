@@ -22,7 +22,7 @@ func Run(ctx *cli.Context) (int, error) {
 	defer c.Websocket.Close()
 
 	// Fetch websocket connection ID
-	connectionID, err := c.GetConnectionID()
+	connectionID, err := client.GetConnectionID(c.Websocket)
 	if err != nil {
 		return 1, err
 	}

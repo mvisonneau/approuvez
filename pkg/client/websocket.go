@@ -6,14 +6,14 @@ import (
 )
 
 // GetConnectionID returns the ID of the currently established websocket connection with API Gateway
-func (c *Client) GetConnectionID() (string, error) {
+func GetConnectionID(c *websocket.Conn) (string, error) {
 	log.Debug("fetching connection ID from websocket")
-	if err := c.Websocket.WriteMessage(websocket.TextMessage, []byte("{\"route\":\"get_connection_id\"}")); err != nil {
+	if err := c.WriteMessage(websocket.TextMessage, []byte("{\"route\":\"get_connection_id\"}")); err != nil {
 		return "", err
 	}
 
 	log.Debug("request for connection ID sent, waiting for response on websocket")
-	_, connectionID, err := c.Websocket.ReadMessage()
+	_, connectionID, err := c.ReadMessage()
 	if err != nil {
 		return "", err
 	}
