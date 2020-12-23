@@ -1,4 +1,5 @@
 approuvez
+!cmd/approuvez
 !deployments/terraform/modules/approuvez
 deployments/terraform/modules/approuvez/*
 !deployments/terraform/modules/approuvez/*.tf

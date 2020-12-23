@@ -57,17 +57,15 @@ install: ## Build and install locally the binary (dev purpose)
 	go install ./cmd/$(NAME)
 
 .PHONY: build-local
-build-local: ## Build the binaries using local GOOS
+build-local: ## Build the binaries locally
 	go build ./cmd/$(NAME)
+	for f in websocket slack_callback ; do \
+    env GOOS=linux GOARCH=amd64 go build -o deployments/terraform/modules/approuvez/$$f ./cmd/$$f; \
+	done
 
 .PHONY: build
 build: ## Build the binaries
 	goreleaser release --snapshot --skip-publish --rm-dist
-
-build-lambdas: ## Build the lambda functions
-	for f in websocket slack_callback ; do \
-    env GOOS=linux GOARCH=amd64 go build -o install/terraform/modules/approuvez/$$f lambdas/$$f.go lambdas/api_gateway_management_api.go; \
-	done
 
 .PHONY: release
 release: ## Build & release the binaries

@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/mvisonneau/approuvez/pkg/lambdas/helpers"
+	"github.com/mvisonneau/approuvez/pkg/helpers"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
