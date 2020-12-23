@@ -44,10 +44,23 @@ builds:
       - -trimpath
 
 archives:
-  - name_template: '{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}'
+  - id: approuvez
+    name_template: '{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}'
+    builds:
+      - approuvez
     format_overrides:
       - goos: windows
         format: zip
+
+  - id: lambda_slack_callback
+    name_template: '{{ .ProjectName }}_lambda_slack_callback_{{ .Tag }}_{{ .Os }}_{{ .Arch }}'
+    builds:
+      - lambda_slack_callback
+
+  - id: lambda_websocket
+    name_template: '{{ .ProjectName }}_lambda_websocket_{{ .Tag }}_{{ .Os }}_{{ .Arch }}'
+    builds:
+      - lambda_websocket
 
 nfpms:
   - maintainer: &author Maxime VISONNEAU <maxime.visonneau@gmail.com>
@@ -85,6 +98,7 @@ dockers:
       - 'docker.io/mvisonneau/approuvez:latest-amd64'
       - 'ghcr.io/mvisonneau/approuvez:latest-amd64'
     binaries: [approuvez]
+    builds: [approuvez]
     dockerfile: Dockerfile
     build_flag_templates:
       - --build-arg=ARCH=amd64
@@ -103,6 +117,7 @@ dockers:
       - 'docker.io/mvisonneau/approuvez:latest-arm64v8'
       - 'ghcr.io/mvisonneau/approuvez:latest-arm64v8'
     binaries: [approuvez]
+    builds: [approuvez]
     goarch: arm64
     dockerfile: Dockerfile
     build_flag_templates:
