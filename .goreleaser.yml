@@ -56,11 +56,15 @@ archives:
     name_template: '{{ .ProjectName }}_lambda_slack_callback_{{ .Tag }}_{{ .Os }}_{{ .Arch }}'
     builds:
       - lambda_slack_callback
+    format_overrides:
+      - format: zip
 
   - id: lambda_websocket
     name_template: '{{ .ProjectName }}_lambda_websocket_{{ .Tag }}_{{ .Os }}_{{ .Arch }}'
     builds:
       - lambda_websocket
+    format_overrides:
+      - format: zip
 
 nfpms:
   - maintainer: &author Maxime VISONNEAU <maxime.visonneau@gmail.com>
@@ -137,19 +141,13 @@ docker_manifests:
       - docker.io/mvisonneau/approuvez:{{ .Tag }}-amd64
       - docker.io/mvisonneau/approuvez:{{ .Tag }}-arm64v8
 
-  - name_template: ghcr.io/mvisonneau/approuvez:{{ .Tag }}
-    image_templates:
-      - ghcr.io/mvisonneau/approuvez:{{ .Tag }}-amd64
-      - ghcr.io/mvisonneau/approuvez:{{ .Tag }}-arm64v8
-
   - name_template: docker.io/mvisonneau/approuvez:latest
     image_templates:
       - docker.io/mvisonneau/approuvez:latest-amd64
       - docker.io/mvisonneau/approuvez:latest-arm64v8
 
-  - name_template: ghcr.io/mvisonneau/approuvez:latest
+  - name_template: ghcr.io/mvisonneau/approuvez:{{ .Tag }}
     image_templates:
-      # It doesn't work if we point it to the latest tags..
       - ghcr.io/mvisonneau/approuvez:{{ .Tag }}-amd64
       - ghcr.io/mvisonneau/approuvez:{{ .Tag }}-arm64v8
 

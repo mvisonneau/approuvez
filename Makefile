@@ -60,7 +60,7 @@ install: ## Build and install locally the binary (dev purpose)
 build-local: ## Build the binaries locally
 	go build ./cmd/$(NAME)
 	for f in websocket slack_callback ; do \
-    env GOOS=linux GOARCH=amd64 go build -o deployments/terraform/modules/approuvez/$$f ./cmd/$$f; \
+    env GOOS=linux GOARCH=amd64 go build -o deployments/terraform/modules/approuvez/$$f ./cmd/lambdas/$$f; \
 	done
 
 .PHONY: build
