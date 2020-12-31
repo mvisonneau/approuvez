@@ -3,7 +3,7 @@ module github.com/mvisonneau/approuvez
 go 1.15
 
 require (
-	github.com/aws/aws-lambda-go v1.21.0
+	github.com/aws/aws-lambda-go v1.22.0
 	github.com/aws/aws-sdk-go v1.36.14
 	github.com/gorilla/websocket v1.4.2
 	github.com/mvisonneau/go-helpers v0.0.1
