@@ -8,13 +8,15 @@ export GO111MODULE=on
 
 .PHONY: setup
 setup: ## Install required libraries/tools for build tasks
-	@command -v cover 2>&1 >/dev/null       || GO111MODULE=off go get -u -v golang.org/x/tools/cmd/cover
-	@command -v goimports 2>&1 >/dev/null   || GO111MODULE=off go get -u -v golang.org/x/tools/cmd/goimports
-	@command -v gosec 2>&1 >/dev/null       || GO111MODULE=off go get -u -v github.com/securego/gosec/cmd/gosec
-	@command -v goveralls 2>&1 >/dev/null   || GO111MODULE=off go get -u -v github.com/mattn/goveralls
-	@command -v ineffassign 2>&1 >/dev/null || GO111MODULE=off go get -u -v github.com/gordonklaus/ineffassign
-	@command -v misspell 2>&1 >/dev/null    || GO111MODULE=off go get -u -v github.com/client9/misspell/cmd/misspell
-	@command -v revive 2>&1 >/dev/null      || GO111MODULE=off go get -u -v github.com/mgechev/revive
+	@command -v cover 2>&1 >/dev/null              || GO111MODULE=off go get -u -v golang.org/x/tools/cmd/cover
+	@command -v goimports 2>&1 >/dev/null          || GO111MODULE=off go get -u -v golang.org/x/tools/cmd/goimports
+	@command -v gosec 2>&1 >/dev/null              || GO111MODULE=off go get -u -v github.com/securego/gosec/cmd/gosec
+	@command -v goveralls 2>&1 >/dev/null          || GO111MODULE=off go get -u -v github.com/mattn/goveralls
+	@command -v ineffassign 2>&1 >/dev/null        || GO111MODULE=off go get -u -v github.com/gordonklaus/ineffassign
+	@command -v misspell 2>&1 >/dev/null           || GO111MODULE=off go get -u -v github.com/client9/misspell/cmd/misspell
+	@command -v protoc 2>&1 >/dev/null             || ( echo "protoc needs to be available in PATH: https://github.com/protocolbuffers/protobuf/releases"; false)
+	@command -v protoc-gen-go-grpc 2>&1 >/dev/null || GO111MODULE=off go get -u -v google.golang.org/grpc/cmd/protoc-gen-go-grpc
+	@command -v revive 2>&1 >/dev/null             || GO111MODULE=off go get -u -v github.com/mgechev/revive
 
 .PHONY: fmt
 fmt: setup ## Format source code
@@ -47,6 +49,13 @@ misspell: setup ## Test code with misspell
 .PHONY: gosec
 gosec: setup ## Test code for security vulnerabilities
 	gosec ./...
+
+.PHONY: protoc
+protoc: setup ## Generate go code from protobuf definitions
+	protoc \
+		--go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		pkg/protobuf/approuvez/approuvez.proto
 
 .PHONY: test
 test: ## Run the tests against the codebase

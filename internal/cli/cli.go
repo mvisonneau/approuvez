@@ -23,50 +23,10 @@ func NewApp(version string, start time.Time) (app *cli.App) {
 	app = cli.NewApp()
 	app.Name = "approuvez"
 	app.Version = version
-	app.Usage = "Command line helper to obtain live confirmation from relevant people"
+	app.Usage = "Command line helper to obtain live confirmation from people in a blocking fashion"
 	app.EnableBashCompletion = true
 
 	app.Flags = cli.FlagsByName{
-		&cli.StringFlag{
-			Name:    "endpoint,e",
-			EnvVars: []string{"APPROUVEZ_ENDPOINT"},
-			Usage:   "websocket `endpoint` to connect in order to listen for events",
-		},
-		&cli.StringFlag{
-			Name:    "token,t",
-			EnvVars: []string{"APPROUVEZ_TOKEN"},
-			Usage:   "`token` to use in order to authenticate against the endpoint",
-		},
-		&cli.StringFlag{
-			Name:    "slack-token",
-			EnvVars: []string{"APPROUVEZ_SLACK_TOKEN"},
-			Usage:   "`token` to use in order to authenticate requests against slack",
-		},
-		&cli.StringFlag{
-			Name:    "slack-message",
-			EnvVars: []string{"APPROUVEZ_SLACK_MESSAGE"},
-			Usage:   "`message` to display on Slack",
-		},
-		&cli.StringFlag{
-			Name:    "slack-channel",
-			EnvVars: []string{"APPROUVEZ_SLACK_CHANNEL"},
-			Usage:   "slack `channel` to write the message onto",
-		},
-		&cli.StringFlag{
-			Name:    "triggerrer",
-			EnvVars: []string{"APPROUVEZ_TRIGGERRER"},
-			Usage:   "`email or slack ID` of the person trigerring the message",
-		},
-		&cli.StringSliceFlag{
-			Name:    "reviewer",
-			EnvVars: []string{"APPROUVEZ_REVIEWER"},
-			Usage:   "`email or slack ID` of a person that should review the message",
-		},
-		&cli.IntFlag{
-			Name:    "required-approvals",
-			EnvVars: []string{"APPROUVEZ_REQUIRED_APPROVALS"},
-			Usage:   "`amount` of approvals required to consider it approved (default to all defined reviewers)",
-		},
 		&cli.StringFlag{
 			Name:    "log-level",
 			EnvVars: []string{"APPROUVEZ_LOG_LEVEL"},
@@ -81,7 +41,74 @@ func NewApp(version string, start time.Time) (app *cli.App) {
 		},
 	}
 
-	app.Action = cmd.ExecWrapper(cmd.Run)
+	app.Commands = cli.CommandsByName{
+		{
+			Name:   "ask",
+			Usage:  "send a message to someone and wait for a response",
+			Action: cmd.ExecWrapper(cmd.Ask),
+			Flags: cli.FlagsByName{
+				&cli.StringFlag{
+					Name:    "endpoint",
+					Aliases: []string{"e"},
+					EnvVars: []string{"APPROUVEZ_SERVER_ENDPOINT"},
+					Usage:   "server `endpoint` to connect upon",
+					Value:   "127.0.0.1:8443",
+				},
+				&cli.StringFlag{
+					Name:    "message",
+					Aliases: []string{"m"},
+					EnvVars: []string{"APPROUVEZ_MESSAGE"},
+					Usage:   "`message` to display on Slack",
+				},
+				&cli.StringFlag{
+					Name:    "reviewer",
+					Aliases: []string{"r"},
+					EnvVars: []string{"APPROUVEZ_REVIEWER"},
+					Usage:   "`email or slack ID` of a person that should review the message",
+				},
+				// TODO: Figure out TLS based authn/z
+				// &cli.StringFlag{
+				// 	Name:    "token,t",
+				// 	EnvVars: []string{"APPROUVEZ_TOKEN"},
+				// 	Usage:   "`token` to use in order to authenticate against the endpoint",
+				// },
+				// DEPRECATED
+				// &cli.StringFlag{
+				// 	Name:    "slack-channel",
+				// 	EnvVars: []string{"APPROUVEZ_SLACK_CHANNEL"},
+				// 	Usage:   "slack `channel` to write the message onto",
+				// },
+				// &cli.StringFlag{
+				// 	Name:    "triggerrer",
+				// 	EnvVars: []string{"APPROUVEZ_TRIGGERRER"},
+				// 	Usage:   "`email or slack ID` of the person trigerring the message",
+				// },
+				// &cli.IntFlag{
+				// 	Name:    "required-approvals",
+				// 	EnvVars: []string{"APPROUVEZ_REQUIRED_APPROVALS"},
+				// 	Usage:   "`amount` of approvals required to consider it approved (default to all defined reviewers)",
+				// },
+			},
+		},
+		{
+			Name:   "serve",
+			Usage:  "run the server thing",
+			Action: cmd.ExecWrapper(cmd.Serve),
+			Flags: cli.FlagsByName{
+				&cli.StringFlag{
+					Name:    "slack-token",
+					EnvVars: []string{"APPROUVEZ_SLACK_TOKEN"},
+					Usage:   "`token` to use in order to authenticate requests against slack",
+				},
+				&cli.StringFlag{
+					Name:    "listen-address",
+					EnvVars: []string{"APPROUVEZ_LISTEN_ADDRESS"},
+					Usage:   "`token` to use in order to authenticate requests against slack",
+					Value:   ":8443",
+				},
+			},
+		},
+	}
 
 	app.Metadata = map[string]interface{}{
 		"startTime": start,

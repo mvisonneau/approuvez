@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mvisonneau/approuvez/pkg/client"
+	"github.com/mvisonneau/approuvez/pkg/server"
 	"github.com/mvisonneau/go-helpers/logger"
 	"github.com/urfave/cli/v2"
 
@@ -13,31 +14,36 @@ import (
 
 var start time.Time
 
-func configure(ctx *cli.Context) (c *client.Client, err error) {
+func configure(ctx *cli.Context) error {
 	start = ctx.App.Metadata["startTime"].(time.Time)
 
-	// Configure logger
-	if err = logger.Configure(logger.Config{
+	return logger.Configure(logger.Config{
 		Level:  ctx.String("log-level"),
 		Format: ctx.String("log-format"),
-	}); err != nil {
-		return
-	}
+	})
+}
 
-	for _, i := range []string{"endpoint", "slack-token", "slack-message", "slack-channel", "triggerrer"} {
+func configureClient(ctx *cli.Context) client.Config {
+	for _, i := range []string{"endpoint", "message", "reviewer"} {
 		assertStringVariableDefined(ctx, i, ctx.String(i))
 	}
-	assertStringSliceVariableNotEmpty(ctx, "reviewer", ctx.StringSlice("reviewer"))
 
-	return client.NewClient(&client.NewClientInput{
-		SlackChannel:      ctx.String("slack-channel"),
-		SlackMessage:      ctx.String("slack-message"),
-		SlackToken:        ctx.String("slack-token"),
-		WebsocketEndpoint: ctx.String("endpoint"),
-		Triggerrer:        ctx.String("triggerrer"),
-		Reviewers:         ctx.StringSlice("reviewer"),
-		RequiredApprovals: ctx.Int("required-approvals"),
-	})
+	return client.Config{
+		Endpoint: ctx.String("endpoint"),
+		Message:  ctx.String("message"),
+		Reviewer: ctx.String("reviewer"),
+	}
+}
+
+func configureServer(ctx *cli.Context) server.Config {
+	for _, i := range []string{"listen-address", "slack-token"} {
+		assertStringVariableDefined(ctx, i, ctx.String(i))
+	}
+
+	return server.Config{
+		ListenAddress: ctx.String("listen-address"),
+		SlackToken:    ctx.String("slack-token"),
+	}
 }
 
 func exit(exitCode int, err error) cli.ExitCoder {
@@ -57,6 +63,9 @@ func exit(exitCode int, err error) cli.ExitCoder {
 // ExecWrapper gracefully logs and exits our `run` functions
 func ExecWrapper(f func(ctx *cli.Context) (int, error)) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
+		if err := configure(ctx); err != nil {
+			return exit(1, err)
+		}
 		return exit(f(ctx))
 	}
 }
