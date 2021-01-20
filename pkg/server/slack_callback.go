@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	pb "github.com/mvisonneau/approuvez/pkg/protobuf/approuvez"
+	pb "github.com/mvisonneau/approuvez/pkg/protobuf"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"

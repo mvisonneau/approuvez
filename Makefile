@@ -84,6 +84,10 @@ release: ## Build & release the binaries
 clean: ## Remove binary if it exists
 	rm -f $(NAME)
 
+.PHONY: certs
+certs: ## Generate self-signed certificates
+	./tools/generate_certs.sh
+
 .PHONY: coverage
 coverage: ## Generates coverage report
 	rm -rf *.out

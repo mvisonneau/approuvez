@@ -1,3 +1,4 @@
+.DS_Store
 approuvez
 !cmd/approuvez
 !pkg/protobuf/approuvez
@@ -10,3 +11,5 @@ deployments/terraform/terraform.tf
 coverage.out
 dist
 vendor
+certs
+!pkg/certs

@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	pb "github.com/mvisonneau/approuvez/pkg/protobuf/approuvez"
+	"github.com/mvisonneau/approuvez/pkg/certs"
+	pb "github.com/mvisonneau/approuvez/pkg/protobuf"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -16,6 +17,7 @@ import (
 type Config struct {
 	SlackToken    string
 	ListenAddress string
+	TLS           certs.Config
 }
 
 // Server handles necessary components to run the server side of the app

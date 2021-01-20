@@ -3,7 +3,8 @@ package client
 import (
 	"context"
 
-	pb "github.com/mvisonneau/approuvez/pkg/protobuf/approuvez"
+	"github.com/mvisonneau/approuvez/pkg/certs"
+	pb "github.com/mvisonneau/approuvez/pkg/protobuf"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -13,6 +14,7 @@ type Config struct {
 	Endpoint string
 	Message  string
 	Reviewer string
+	TLS      certs.Config
 }
 
 // Client ..

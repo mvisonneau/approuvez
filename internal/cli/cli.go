@@ -39,6 +39,26 @@ func NewApp(version string, start time.Time) (app *cli.App) {
 			Usage:   "log `format` (json,text)",
 			Value:   "text",
 		},
+		&cli.BoolFlag{
+			Name:    "tls-disable",
+			EnvVars: []string{"APPROUVEZ_TLS_DISABLE"},
+			Usage:   "disable mutual tls for gRPC transmissions (use with care!)",
+		},
+		&cli.StringFlag{
+			Name:    "tls-ca-cert",
+			EnvVars: []string{"APPROUVEZ_TLS_CA_CERT"},
+			Usage:   "TLS CA certificate `path`",
+		},
+		&cli.StringFlag{
+			Name:    "tls-cert",
+			EnvVars: []string{"APPROUVEZ_TLS_CERT"},
+			Usage:   "TLS certificate `path`",
+		},
+		&cli.StringFlag{
+			Name:    "tls-key",
+			EnvVars: []string{"APPROUVEZ_TLS_KEY"},
+			Usage:   "TLS key `path`",
+		},
 	}
 
 	app.Commands = cli.CommandsByName{
@@ -66,28 +86,6 @@ func NewApp(version string, start time.Time) (app *cli.App) {
 					EnvVars: []string{"APPROUVEZ_REVIEWER"},
 					Usage:   "`email or slack ID` of a person that should review the message",
 				},
-				// TODO: Figure out TLS based authn/z
-				// &cli.StringFlag{
-				// 	Name:    "token,t",
-				// 	EnvVars: []string{"APPROUVEZ_TOKEN"},
-				// 	Usage:   "`token` to use in order to authenticate against the endpoint",
-				// },
-				// DEPRECATED
-				// &cli.StringFlag{
-				// 	Name:    "slack-channel",
-				// 	EnvVars: []string{"APPROUVEZ_SLACK_CHANNEL"},
-				// 	Usage:   "slack `channel` to write the message onto",
-				// },
-				// &cli.StringFlag{
-				// 	Name:    "triggerrer",
-				// 	EnvVars: []string{"APPROUVEZ_TRIGGERRER"},
-				// 	Usage:   "`email or slack ID` of the person trigerring the message",
-				// },
-				// &cli.IntFlag{
-				// 	Name:    "required-approvals",
-				// 	EnvVars: []string{"APPROUVEZ_REQUIRED_APPROVALS"},
-				// 	Usage:   "`amount` of approvals required to consider it approved (default to all defined reviewers)",
-				// },
 			},
 		},
 		{

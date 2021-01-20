@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/mvisonneau/approuvez/pkg/certs"
 	"github.com/mvisonneau/approuvez/pkg/client"
 	"github.com/mvisonneau/approuvez/pkg/server"
 	"github.com/mvisonneau/go-helpers/logger"
@@ -32,6 +33,7 @@ func configureClient(ctx *cli.Context) client.Config {
 		Endpoint: ctx.String("endpoint"),
 		Message:  ctx.String("message"),
 		Reviewer: ctx.String("reviewer"),
+		TLS:      configureTLS(ctx),
 	}
 }
 
@@ -43,6 +45,22 @@ func configureServer(ctx *cli.Context) server.Config {
 	return server.Config{
 		ListenAddress: ctx.String("listen-address"),
 		SlackToken:    ctx.String("slack-token"),
+		TLS:           configureTLS(ctx),
+	}
+}
+
+func configureTLS(ctx *cli.Context) certs.Config {
+	if !ctx.Bool("tls-disable") {
+		for _, i := range []string{"tls-ca-cert", "tls-cert", "tls-key"} {
+			assertStringVariableDefined(ctx, i, ctx.String(i))
+		}
+	}
+
+	return certs.Config{
+		Disable: ctx.Bool("tls-disable"),
+		CA:      ctx.String("tls-ca-cert"),
+		Cert:    ctx.String("tls-cert"),
+		Key:     ctx.String("tls-key"),
 	}
 }
 
