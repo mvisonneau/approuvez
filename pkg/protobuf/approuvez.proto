@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option go_package = "github.com/mvisonneau/approuvez/pkg/protobuf";
+
+package approuvez;
+
+service Approuvez {
+  rpc NewSession(Empty) returns (Session);
+  rpc CreateStream(SlackUserRequest) returns (stream SlackUserResponse);
+}
+
+message Empty {}
+
+message Session {
+  string id = 1;
+}
+
+message SlackUser {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+}
+
+message SlackUserRequest {
+  Session session = 1;
+  string user = 2;
+  string message = 3;
+  string link_name = 4;
+  string link_url = 5;
+}
+
+message SlackUserResponse {
+  SlackUser user = 2;
+
+  enum Decision {
+    DENY = 0;
+    APPROVE = 1;
+  }
+
+  Decision decision = 3;
+}

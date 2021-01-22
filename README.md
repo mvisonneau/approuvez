@@ -6,47 +6,74 @@
 [![Build Status](https://github.com/mvisonneau/approuvez/workflows/test/badge.svg?branch=main)](https://github.com/mvisonneau/approuvez/actions)
 [![Coverage Status](https://coveralls.io/repos/github/mvisonneau/approuvez/badge.svg?branch=master)](https://coveralls.io/github/mvisonneau/approuvez?branch=master)
 
-> Obtain live confirmation from people
-
 ## Usage
 
 ```bash
+~$ approuvez --help
 NAME:
-   approuvez - Command line helper to obtain live confirmation from relevant people
+   approuvez - Command line helper to obtain live confirmation from people in a blocking fashion
 
 USAGE:
    approuvez [global options] command [command options] [arguments...]
 
 COMMANDS:
+   ask      send a message to someone and wait for a response
+   serve    run the server thing
    help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   --endpoint endpoint             websocket endpoint to connect in order to listen for events [$APPROUVEZ_ENDPOINT]
-   --token token                   token to use in order to authenticate against the endpoint [$APPROUVEZ_TOKEN]
-   --slack-token token             token to use in order to authenticate requests against slack [$APPROUVEZ_SLACK_TOKEN]
-   --slack-message message         message to display on Slack [$APPROUVEZ_SLACK_MESSAGE]
-   --slack-channel channel         slack channel to write the message onto [$APPROUVEZ_SLACK_CHANNEL]
-   --triggerrer email or slack ID  email or slack ID of the person trigerring the message [$APPROUVEZ_TRIGGERRER]
-   --reviewer email or slack ID    email or slack ID of a person that should review the message [$APPROUVEZ_REVIEWER]
-   --required-approvals amount     amount of approvals required to consider it approved (default to all defined reviewers) (default: 0) [$APPROUVEZ_REQUIRED_APPROVALS]
-   --log-level level               log level (debug,info,warn,fatal,panic) (default: "info") [$APPROUVEZ_LOG_LEVEL]
-   --log-format format             log format (json,text) (default: "text") [$APPROUVEZ_LOG_FORMAT]
-   --help, -h                      show help (default: false)
+   --log-level level    log level (debug,info,warn,fatal,panic) (default: "info") [$APPROUVEZ_LOG_LEVEL]
+   --log-format format  log format (json,text) (default: "text") [$APPROUVEZ_LOG_FORMAT]
+   --tls-disable        disable mutual tls for gRPC transmissions (use with care!) (default: false) [$APPROUVEZ_TLS_DISABLE]
+   --tls-ca-cert path   TLS CA certificate path [$APPROUVEZ_TLS_CA_CERT]
+   --tls-cert path      TLS certificate path [$APPROUVEZ_TLS_CERT]
+   --tls-key path       TLS key path [$APPROUVEZ_TLS_KEY]
+   --help, -h           show help (default: false)
+```
+
+### Server
+
+```bash
+~$ approuvez serve --help
+NAME:
+   approuvez serve - run the server thing
+
+USAGE:
+   approuvez serve [command options] [arguments...]
+
+OPTIONS:
+   --slack-token token     token to use in order to authenticate requests against slack [$APPROUVEZ_SLACK_TOKEN]
+   --listen-address token  token to use in order to authenticate requests against slack (default: ":8443") [$APPROUVEZ_LISTEN_ADDRESS]
+   --help, -h              show help (default: false)
+```
+
+### Client
+
+```bash
+~$ approuvez ask --help
+NAME:
+   approuvez ask - send a message to someone and wait for a response
+
+USAGE:
+   approuvez ask [command options] [arguments...]
+
+OPTIONS:
+   --endpoint endpoint, -e endpoint                server endpoint to connect upon (default: "127.0.0.1:8443") [$APPROUVEZ_SERVER_ENDPOINT]
+   --user email or slack ID, -u email or slack ID  email or slack ID of a person that should review the message [$APPROUVEZ_USER]
+   --message message, -m message                   message to display on Slack [$APPROUVEZ_MESSAGE]
+   --link-name name                                name of a link button to append to the message [$APPROUVEZ_LINK_NAME]
+   --link-url url                                  url of a link button to append to the message [$APPROUVEZ_LINK_URL]
+   --help, -h                                      show help (default: false)
 ```
 
 ## Architecture
 
 ![approuvez_architecture](docs/images/approuvez_architecture.png)
 
-## Requirements
-
-- AWS account with lambda permissions
-- Terraform >= 0.13
-
 ## Develop / Test
 
 ```bash
-~$ make build-local
+~$ make build
 ~$ ./approuvez
 ```
 

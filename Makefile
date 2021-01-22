@@ -8,13 +8,14 @@ export GO111MODULE=on
 
 .PHONY: setup
 setup: ## Install required libraries/tools for build tasks
-	@command -v cover 2>&1 >/dev/null       || GO111MODULE=off go get -u -v golang.org/x/tools/cmd/cover
-	@command -v goimports 2>&1 >/dev/null   || GO111MODULE=off go get -u -v golang.org/x/tools/cmd/goimports
-	@command -v gosec 2>&1 >/dev/null       || GO111MODULE=off go get -u -v github.com/securego/gosec/cmd/gosec
-	@command -v goveralls 2>&1 >/dev/null   || GO111MODULE=off go get -u -v github.com/mattn/goveralls
-	@command -v ineffassign 2>&1 >/dev/null || GO111MODULE=off go get -u -v github.com/gordonklaus/ineffassign
-	@command -v misspell 2>&1 >/dev/null    || GO111MODULE=off go get -u -v github.com/client9/misspell/cmd/misspell
-	@command -v revive 2>&1 >/dev/null      || GO111MODULE=off go get -u -v github.com/mgechev/revive
+	@command -v cover 2>&1 >/dev/null              || GO111MODULE=off go get -u -v golang.org/x/tools/cmd/cover
+	@command -v goimports 2>&1 >/dev/null          || GO111MODULE=off go get -u -v golang.org/x/tools/cmd/goimports
+	@command -v gosec 2>&1 >/dev/null              || GO111MODULE=off go get -u -v github.com/securego/gosec/cmd/gosec
+	@command -v goveralls 2>&1 >/dev/null          || GO111MODULE=off go get -u -v github.com/mattn/goveralls
+	@command -v ineffassign 2>&1 >/dev/null        || GO111MODULE=off go get -u -v github.com/gordonklaus/ineffassign
+	@command -v misspell 2>&1 >/dev/null           || GO111MODULE=off go get -u -v github.com/client9/misspell/cmd/misspell
+	@command -v protoc-gen-go-grpc 2>&1 >/dev/null || GO111MODULE=off go get -u -v google.golang.org/grpc/cmd/protoc-gen-go-grpc
+	@command -v revive 2>&1 >/dev/null             || GO111MODULE=off go get -u -v github.com/mgechev/revive
 
 .PHONY: fmt
 fmt: setup ## Format source code
@@ -38,7 +39,7 @@ goimports: setup ## Test code syntax with goimports
 
 .PHONY: ineffassign
 ineffassign: setup ## Test code syntax for ineffassign
-	ineffassign $(FILES)
+	ineffassign ./...
 
 .PHONY: misspell
 misspell: setup ## Test code with misspell
@@ -47,6 +48,14 @@ misspell: setup ## Test code with misspell
 .PHONY: gosec
 gosec: setup ## Test code for security vulnerabilities
 	gosec ./...
+
+.PHONY: protoc
+protoc: setup ## Generate go code from protobuf definitions
+	@command -v protoc 2>&1 >/dev/null || ( echo "protoc needs to be available in PATH: https://github.com/protocolbuffers/protobuf/releases"; false)
+	protoc \
+		--go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		pkg/protobuf/approuvez.proto
 
 .PHONY: test
 test: ## Run the tests against the codebase
@@ -59,9 +68,6 @@ install: ## Build and install locally the binary (dev purpose)
 .PHONY: build-local
 build-local: ## Build the binaries locally
 	go build ./cmd/$(NAME)
-	for f in websocket slack_callback ; do \
-    env GOOS=linux GOARCH=amd64 go build -o deployments/terraform/modules/approuvez/$$f ./cmd/lambdas/$$f; \
-	done
 
 .PHONY: build
 build: ## Build the binaries
@@ -74,6 +80,10 @@ release: ## Build & release the binaries
 .PHONY: clean
 clean: ## Remove binary if it exists
 	rm -f $(NAME)
+
+.PHONY: certs
+certs: ## Generate self-signed certificates
+	./tools/generate_certs.sh
 
 .PHONY: coverage
 coverage: ## Generates coverage report

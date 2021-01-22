@@ -21,28 +21,6 @@ builds:
       - goos: darwin
         goarch: 386
 
-  - id: lambda_slack_callback
-    main: ./cmd/lambdas/slack_callback
-    env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
-    goarch:
-      - amd64
-    flags:
-      - -trimpath
-
-  - id: lambda_websocket
-    main: ./cmd/lambdas/websocket
-    env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
-    goarch:
-      - amd64
-    flags:
-      - -trimpath
-
 archives:
   - id: approuvez
     name_template: '{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}'
@@ -51,20 +29,6 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
-
-  - id: lambda_slack_callback
-    name_template: '{{ .ProjectName }}_lambda_slack_callback_{{ .Tag }}_{{ .Os }}_{{ .Arch }}'
-    builds:
-      - lambda_slack_callback
-    format_overrides:
-      - format: zip
-
-  - id: lambda_websocket
-    name_template: '{{ .ProjectName }}_lambda_websocket_{{ .Tag }}_{{ .Os }}_{{ .Arch }}'
-    builds:
-      - lambda_websocket
-    format_overrides:
-      - format: zip
 
 nfpms:
   - maintainer: &author Maxime VISONNEAU <maxime.visonneau@gmail.com>

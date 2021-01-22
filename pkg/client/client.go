@@ -1,198 +1,88 @@
 package client
 
 import (
-	"fmt"
+	"context"
 	"strings"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/mvisonneau/approuvez/pkg/certs"
+	pb "github.com/mvisonneau/approuvez/pkg/protobuf"
+	"google.golang.org/grpc"
+
 	log "github.com/sirupsen/logrus"
-	"github.com/slack-go/slack"
 )
 
-// NewClientInput is a helper for the NewClient() function
-type NewClientInput struct {
-	SlackToken        string
-	SlackChannel      string
-	SlackMessage      string
-	WebsocketEndpoint string
-	Triggerrer        string
-	Reviewers         []string
-	RequiredApprovals int
+// Config ..
+type Config struct {
+	Endpoint string
+	User     string
+	Message  string
+	LinkName string
+	LinkURL  string
+	TLS      certs.Config
 }
 
-// Client handles necessary components to run the app
+// Client ..
 type Client struct {
-	Slack     *slack.Client
-	Websocket *websocket.Conn
-
-	Config struct {
-		Slack struct {
-			Channel string
-			Message string
-		}
-
-		Triggerrer        string
-		Reviewers         []string
-		RequiredApprovals int
-	}
+	RPC pb.ApprouvezClient
 }
 
-// Messages ..
-type Messages struct {
-	Channel MessageRef
-	Users   map[string]map[string]MessageRef
-}
-
-// MessageRef can be used to store references to sent messages
-type MessageRef struct {
-	ChannelID        string
-	MessageTimestamp string
-}
-
-// NewClient instantiate a Client from a provider Config
-func NewClient(input *NewClientInput) (c *Client, err error) {
-	var ws *websocket.Conn
-	dialer := websocket.Dialer{
-		HandshakeTimeout: 5 * time.Second,
-	}
-
-	log.WithFields(
-		log.Fields{
-			"websocket-endpoint": input.WebsocketEndpoint,
-		},
-	).Debug("connecting to websocket")
-
-	ws, _, err = dialer.Dial(input.WebsocketEndpoint, nil)
-	if err != nil {
-		return
-	}
-
-	log.WithFields(
-		log.Fields{
-			"websocket-endpoint": input.WebsocketEndpoint,
-		},
-	).Info("connected to websocket endpoint successfully")
-
-	c = &Client{
-		Slack:     slack.New(input.SlackToken),
-		Websocket: ws,
-	}
-
-	c.Config.Slack.Channel = input.SlackChannel
-	c.Config.Slack.Message = input.SlackMessage
-	c.Config.Triggerrer = input.Triggerrer
-	c.Config.Reviewers = input.Reviewers
-	c.Config.RequiredApprovals = input.RequiredApprovals
-
-	return
-}
-
-// ListenForApprovals will loop until the amount of required approvals is reached
-// or if a deny event is received
-func (c *Client) ListenForApprovals(messages *Messages, triggerrer *slack.User, reviewers map[string]*slack.User) (bool, error) {
-	decisions := map[string]bool{}
-	requiredApprovals := c.getRequiredApprovals(reviewers)
-
-	for requiredApprovals > 0 {
-		log.WithFields(
-			log.Fields{
-				"required-approvals": requiredApprovals,
-			},
-		).Info("waiting for approval(s)")
-
-		userID, decision, err := c.readResponse()
+// Dial ..
+func Dial(cfg Config) *grpc.ClientConn {
+	var tlsDialOption grpc.DialOption
+	if cfg.TLS.Disable {
+		tlsDialOption = grpc.WithInsecure()
+	} else {
+		clientCerts, err := certs.LoadClientCertificates(
+			cfg.TLS,
+			cfg.Endpoint[:strings.IndexByte(cfg.Endpoint, ':')],
+		)
 		if err != nil {
-			return false, err
+			log.Fatal(err)
 		}
-
-		if _, ok := reviewers[userID]; !ok {
-			log.WithFields(
-				log.Fields{
-					"user-id": userID,
-				},
-			).Warn("received a response from a user not part of the allowed reviewers, skipping event")
-			continue
-		}
-
-		switch decision {
-		case "approve":
-			log.WithFields(
-				log.Fields{
-					"user-id":   userID,
-					"user-name": reviewers[userID].Name,
-				},
-			).Info("received an approval response from Slack")
-			decisions[userID] = true
-			requiredApprovals--
-			if err := c.SubmitApprovalMessages(messages, triggerrer, reviewers, decisions, userID); err != nil {
-				return false, err
-			}
-
-		case "deny":
-			log.WithFields(
-				log.Fields{
-					"user-id":   userID,
-					"user-name": reviewers[userID].Name,
-				},
-			).Info("received a denial response from Slack, exiting")
-			decisions[userID] = false
-
-			if err := c.SubmitDenialMessages(messages, triggerrer, reviewers, decisions, userID); err != nil {
-				return false, err
-			}
-
-			return false, nil
-		default:
-			log.WithFields(
-				log.Fields{
-					"user-id":   userID,
-					"user-name": reviewers[userID].Name,
-					"decision":  decision,
-				},
-			).Error("received an unknown response decision from Slack")
-		}
+		tlsDialOption = grpc.WithTransportCredentials(clientCerts)
 	}
 
-	// Remove buttons for people who did not reply
-	for u, m := range messages.Users {
-		if _, ok := decisions[u]; !ok {
-			_, _, _, err := c.Slack.UpdateMessage(m["action"].ChannelID, m["action"].MessageTimestamp, slack.MsgOptionText("already approved ✅, sorry for the noise 🙇‍♂️!", false), slack.MsgOptionAttachments(slack.Attachment{}))
-			if err != nil {
-				return false, err
-			}
-		}
-	}
-
-	return true, nil
-}
-
-func (c *Client) getRequiredApprovals(reviewers map[string]*slack.User) (requiredApprovals int) {
-	requiredApprovals = len(reviewers)
-	if c.Config.RequiredApprovals > 0 {
-		requiredApprovals = c.Config.RequiredApprovals
-	}
-	return
-}
-
-func (c *Client) readResponse() (userID string, decision string, err error) {
-	_, resp, err := c.Websocket.ReadMessage()
+	log.WithField("endpoint", cfg.Endpoint).Debug("establishing gRPC connection to the server..")
+	conn, err := grpc.Dial(
+		cfg.Endpoint,
+		tlsDialOption,
+		grpc.WithBlock(),
+		grpc.WithTimeout(5*time.Second),
+	)
 	if err != nil {
-		return "", "", err
+		log.WithField("endpoint", cfg.Endpoint).WithField("error", err).Fatalf("could not connect to the server")
 	}
 
-	s := strings.Split(string(resp), "/")
-	if len(s) != 2 {
-		return "", "", fmt.Errorf("unable to interprete response '%s' 🤷‍♂️", string(resp))
+	log.Debug("gRPC connection established")
+	return conn
+}
+
+// ListenForSlackResponses ..
+func (c *Client) ListenForSlackResponses(req *pb.SlackUserRequest) (int, error) {
+	stream, err := c.RPC.CreateStream(context.Background(), req)
+	if err != nil {
+		log.WithField("error", err).Errorf("connection failed")
+		return 1, nil
 	}
 
-	userID = s[0]
-	decision = s[1]
-	log.WithFields(
-		log.Fields{
-			"user-id":  userID,
-			"decision": decision,
-		},
-	).Debug("received a response from Slack")
-	return
+	log.Infof("message sent, waiting for user's decision")
+
+	msg, err := stream.Recv()
+	if err != nil {
+		log.WithField("error", err).Errorf("reading message from server")
+		return 1, nil
+	}
+
+	log.WithFields(log.Fields{
+		"user_id":   msg.User.Id,
+		"user_name": msg.User.Name,
+		"decision":  msg.Decision,
+	}).Infof("received response")
+
+	if msg.Decision == pb.SlackUserResponse_APPROVE {
+		return 0, nil
+	}
+
+	return 1, nil
 }
