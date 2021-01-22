@@ -66,7 +66,7 @@ func (c *Client) ListenForSlackResponses(req *pb.SlackUserRequest) (int, error) 
 		return 1, nil
 	}
 
-	log.Infof("message sent, waiting for user's descision")
+	log.Infof("message sent, waiting for user's decision")
 
 	msg, err := stream.Recv()
 	if err != nil {
