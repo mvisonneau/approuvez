@@ -44,6 +44,10 @@ func httpServe(l net.Listener, srv *server.Server) error {
 	r := mux.NewRouter()
 	r.HandleFunc("/callbacks/slack", srv.HandleSlackCallback).Methods("POST")
 
+	// TODO: Implement better healthchecks..
+	r.HandleFunc("/health/live", func(rw http.ResponseWriter, r *http.Request) { rw.WriteHeader(http.StatusOK) })
+	r.HandleFunc("/health/ready", func(rw http.ResponseWriter, r *http.Request) { rw.WriteHeader(http.StatusOK) })
+
 	s := &http.Server{Handler: r}
 	return s.Serve(l)
 }
