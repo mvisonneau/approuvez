@@ -82,7 +82,19 @@ func (s *Server) CreateStream(req *pb.SlackUserRequest, stream pb.Approuvez_Crea
 		return fmt.Errorf("slack error: %v", err)
 	}
 
-	s.PromptSlackUser(sessionID.String(), req.Message, user.ID)
+	msg := SlackMessage{
+		SessionID:      sessionID.String(),
+		Message:        req.Message,
+		LinkButtonName: req.LinkName,
+		LinkButtonURL:  req.LinkUrl,
+		ActionButtons:  true,
+		StatusMessage:  ":grin: waiting for your approval",
+		Color:          messageColorDefault,
+	}
+
+	if err = s.PromptSlackUser(msg, user.ID); err != nil {
+		return err
+	}
 
 	return <-session.Error
 }

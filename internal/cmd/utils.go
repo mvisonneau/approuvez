@@ -25,14 +25,16 @@ func configure(ctx *cli.Context) error {
 }
 
 func configureClient(ctx *cli.Context) client.Config {
-	for _, i := range []string{"endpoint", "message", "reviewer"} {
+	for _, i := range []string{"endpoint", "message", "user"} {
 		assertStringVariableDefined(ctx, i, ctx.String(i))
 	}
 
 	return client.Config{
 		Endpoint: ctx.String("endpoint"),
+		User:     ctx.String("user"),
 		Message:  ctx.String("message"),
-		Reviewer: ctx.String("reviewer"),
+		LinkName: ctx.String("link-name"),
+		LinkURL:  ctx.String("link-url"),
 		TLS:      configureTLS(ctx),
 	}
 }

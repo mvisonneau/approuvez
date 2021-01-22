@@ -31,8 +31,13 @@ func TestExit(t *testing.T) {
 }
 
 func TestExecWrapper(t *testing.T) {
+	ctx, flags := NewTestContext()
+	flags.String("log-format", "text", "")
+	flags.String("log-level", "debug", "")
+
 	function := func(ctx *cli.Context) (int, error) {
 		return 0, nil
 	}
-	assert.Equal(t, exit(function(&cli.Context{})), ExecWrapper(function)(&cli.Context{}))
+
+	assert.Equal(t, exit(function(ctx)), ExecWrapper(function)(ctx))
 }

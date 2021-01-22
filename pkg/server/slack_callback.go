@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -14,11 +13,20 @@ import (
 	"github.com/slack-go/slack"
 )
 
+const (
+	approveMessage = ":white_check_mark: approved!"
+	denyMessage    = ":x: denied!"
+)
+
 // HandleSlackCallback ..
 func (s *Server) HandleSlackCallback(w http.ResponseWriter, r *http.Request) {
 	var p slack.InteractionCallback
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(r.Body)
+	if _, err := buf.ReadFrom(r.Body); err != nil {
+		log.WithField("error", err).Errorf("unable to read the payload's body")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	unescapedBody, err := url.QueryUnescape(buf.String()[8:])
 	if err != nil {
@@ -34,10 +42,45 @@ func (s *Server) HandleSlackCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID, err := uuid.Parse(p.CallbackID)
+	// Recompose our message from the callback payload
+	msg := SlackMessage{}
+	msg.Recompose(p.Message)
+	msg.ActionButtons = false
+
+	if len(p.ActionCallback.BlockActions) == 0 {
+		log.Errorf("could not determine the action from the block")
+		http.Error(w, "", http.StatusBadRequest)
+
+		msg.StatusMessage = ":warning: an error occurred when sending the response (unknown action)"
+		msg.Color = messageColorOrange
+		s.UpdateMessage(p.Channel.ID, p.Message.Timestamp, msg)
+		return
+	}
+
+	var decision pb.SlackUserResponse_Decision
+	msg.StatusMessage = denyMessage
+	msg.Color = messageColorRed
+	action := p.ActionCallback.BlockActions[0]
+	switch action.ActionID {
+	case "linkButton":
+		// When URL buttons are clicked we still receive an interaction payload
+		// https://api.slack.com/reference/block-kit/block-elements#button__fields
+		// In such cases we simply need to return a 200 to acknowledge.
+		log.Debug("URL button being clicked, simply acknowledging the interaction request..")
+		return
+	case "approve":
+		decision = pb.SlackUserResponse_APPROVE
+		msg.StatusMessage = approveMessage
+		msg.Color = messageColorGreen
+	}
+
+	sessionID, err := uuid.Parse(msg.SessionID)
 	if err != nil {
-		log.WithField("error", err).WithField("callback_id", p.CallbackID).Errorf("invalid callback id from slack callback payload")
+		log.WithField("error", err).WithField("session_id", p.BlockID).Errorf("invalid session id from slack callback payload")
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		msg.StatusMessage = ":warning: an error occurred when sending the response (invalid session_id)"
+		msg.Color = messageColorOrange
+		s.UpdateMessage(p.Channel.ID, p.Message.Timestamp, msg)
 		return
 	}
 
@@ -45,19 +88,10 @@ func (s *Server) HandleSlackCallback(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		log.Errorf("session with the client does not exist")
 		http.Error(w, "", http.StatusBadRequest)
+		msg.StatusMessage = ":warning: an error occurred when sending the response (session closed)"
+		msg.Color = messageColorOrange
+		s.UpdateMessage(p.Channel.ID, p.Message.Timestamp, msg)
 		return
-	}
-
-	if len(p.ActionCallback.AttachmentActions) < 1 {
-		log.Errorf("unable to read the decision from the payload")
-		http.Error(w, "", http.StatusBadRequest)
-		return
-	}
-
-	var decision pb.SlackUserResponse_Decision
-	switch p.ActionCallback.AttachmentActions[0].Name {
-	case "approve":
-		decision = pb.SlackUserResponse_APPROVE
 	}
 
 	log.WithFields(log.Fields{
@@ -66,11 +100,7 @@ func (s *Server) HandleSlackCallback(w http.ResponseWriter, r *http.Request) {
 		"decision":   decision,
 	}).Info("processing slack callback")
 
-	_, _, _, err = s.Slack.UpdateMessage(p.Channel.ID, p.MessageTs, slack.MsgOptionAttachments(slack.Attachment{}), slack.MsgOptionText(fmt.Sprintf("%s\n%s", p.OriginalMessage.Text, "approved! ✅"), false))
-	if err != nil {
-		log.WithField("error", err).Errorf("unable to remove the buttons from the slack message")
-		return
-	}
+	s.UpdateMessage(p.Channel.ID, p.Message.Timestamp, msg)
 
 	err = session.Stream.Send(&pb.SlackUserResponse{
 		User: &pb.SlackUser{
@@ -83,6 +113,11 @@ func (s *Server) HandleSlackCallback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.WithField("error", err).Errorf("unable to forward the response to the client")
 		delete(s.Sessions, session.ID)
+
+		msg.StatusMessage = ":warning: the session with the client was already closed, response ignored"
+		msg.Color = messageColorOrange
+		s.UpdateMessage(p.Channel.ID, p.Message.Timestamp, msg)
+
 		return
 	}
 }

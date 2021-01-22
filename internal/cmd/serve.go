@@ -36,9 +36,8 @@ func Serve(ctx *cli.Context) (int, error) {
 	g.Go(func() error { return m.Serve() })
 
 	log.Infof("started multiplexed HTTP/gRPC server on %s", cfg.ListenAddress)
-	g.Wait()
 
-	return 0, nil
+	return 0, g.Wait()
 }
 
 func httpServe(l net.Listener, srv *server.Server) error {

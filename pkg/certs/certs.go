@@ -60,20 +60,18 @@ func LoadCertificates(
 		return nil, err
 	}
 
-	var tlsConfig *tls.Config
+	tlsConfig := &tls.Config{
+		MinVersion:   tls.VersionTLS13,
+		Certificates: []tls.Certificate{keyPair},
+	}
+
 	switch t {
 	case CertificateTypeServer:
-		tlsConfig = &tls.Config{
-			ClientAuth:   tls.RequireAndVerifyClientCert,
-			Certificates: []tls.Certificate{keyPair},
-			ClientCAs:    certPool,
-		}
+		tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+		tlsConfig.ClientCAs = certPool
 	case CertificateTypeClient:
-		tlsConfig = &tls.Config{
-			ServerName:   serverName,
-			Certificates: []tls.Certificate{keyPair},
-			RootCAs:      certPool,
-		}
+		tlsConfig.ServerName = serverName
+		tlsConfig.RootCAs = certPool
 	default:
 		return nil, fmt.Errorf("invalid certificate type: %v", t)
 	}

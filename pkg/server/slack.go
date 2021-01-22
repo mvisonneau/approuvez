@@ -1,12 +1,30 @@
 package server
 
 import (
-	"fmt"
 	"regexp"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/slack-go/slack"
 )
+
+const (
+	messageColorDefault = "#6d87d1"
+	messageColorGreen   = "#36a64f"
+	messageColorRed     = "#cc1212"
+	messageColorOrange  = "#e8971e"
+)
+
+// SlackMessage ..
+type SlackMessage struct {
+	SessionID      string
+	Message        string
+	LinkButtonName string
+	LinkButtonURL  string
+	ActionButtons  bool
+	StatusMessage  string
+	Color          string
+}
 
 // GetSlackUser returns a slack user based on its email, name or ID
 func (s *Server) GetSlackUser(ref string) (*slack.User, error) {
@@ -26,94 +44,140 @@ func (s *Server) GetSlackUser(ref string) (*slack.User, error) {
 	return s.Slack.GetUserInfo(ref)
 }
 
-// GenerateSlackMessageBlocks compute the message blocks
-func GenerateSlackMessageBlocks(message, _ string) []slack.Block {
-	headerText := slack.NewTextBlockObject("mrkdwn", message, false, false)
-	headerSection := slack.NewSectionBlock(headerText, nil, nil)
+// Render compute the message blocks
+func (msg *SlackMessage) Render() slack.MsgOption {
+	section := slack.NewSectionBlock(
+		&slack.TextBlockObject{
+			Type: slack.MarkdownType,
+			Text: strings.Replace(msg.Message, `\n`, "\n", -1),
+		},
+		nil,
+		nil,
+	)
 
-	// reviewersText := slack.NewTextBlockObject("mrkdwn", user, false, false)
-	// reviewersSection := slack.NewSectionBlock(reviewersText, nil, nil)
+	if len(msg.LinkButtonName) > 0 {
+		linkButton := slack.NewButtonBlockElement(
+			"linkButton",
+			"",
+			slack.NewTextBlockObject(
+				slack.PlainTextType,
+				msg.LinkButtonName,
+				true,
+				false,
+			),
+		)
+		linkButton.URL = msg.LinkButtonURL
+		section.Accessory = slack.NewAccessory(linkButton)
+	}
 
-	return []slack.Block{
-		headerSection,
-		// reviewersSection,
+	footer := slack.NewContextBlock(
+		"footer",
+		slack.NewTextBlockObject(
+			slack.PlainTextType,
+			msg.StatusMessage,
+			true,
+			false,
+		),
+	)
+
+	approveButton := slack.ButtonBlockElement{
+		Type:     slack.METButton,
+		ActionID: "approve",
+		Style:    slack.StylePrimary,
+		Text: slack.NewTextBlockObject(
+			slack.PlainTextType,
+			"Approve",
+			true,
+			false,
+		),
+	}
+
+	denyButton := slack.ButtonBlockElement{
+		Type:     slack.METButton,
+		ActionID: "deny",
+		Style:    slack.StyleDanger,
+		Text: slack.NewTextBlockObject(
+			slack.PlainTextType,
+			"Deny",
+			true,
+			false,
+		),
+	}
+
+	buttons := slack.NewActionBlock(
+		msg.SessionID,
+		approveButton,
+		denyButton,
+	)
+
+	blocks := []slack.Block{
+		section,
+		slack.NewDividerBlock(),
+		footer,
+	}
+
+	if msg.ActionButtons {
+		blocks = append(blocks, buttons)
+	}
+
+	return slack.MsgOptionAttachments(slack.Attachment{
+		Color:  msg.Color,
+		Blocks: slack.Blocks{BlockSet: blocks},
+	})
+}
+
+// Recompose a message from an interaction payload
+func (msg *SlackMessage) Recompose(payload slack.Message) {
+	if len(payload.Attachments) != 1 {
+		log.Error("expected the payload to contain exactly 1 attachement")
+		return
+	}
+
+	msg.Color = payload.Attachments[0].Color
+	newMessageBlocks := []slack.Block{}
+	for _, b := range payload.Attachments[0].Blocks.BlockSet {
+		switch b.BlockType() {
+		case slack.MBTSection:
+			msg.Message = b.(*slack.SectionBlock).Text.Text
+
+			if b.(*slack.SectionBlock).Accessory != nil &&
+				b.(*slack.SectionBlock).Accessory.ButtonElement != nil &&
+				b.(*slack.SectionBlock).Accessory.ButtonElement.Text != nil {
+				msg.LinkButtonName = b.(*slack.SectionBlock).Accessory.ButtonElement.Text.Text
+				msg.LinkButtonURL = b.(*slack.SectionBlock).Accessory.ButtonElement.URL
+			}
+		case slack.MBTContext:
+			if b.(*slack.ContextBlock).BlockID == "footer" && len(b.(*slack.ContextBlock).ContextElements.Elements) == 1 {
+				msg.StatusMessage = string(b.(*slack.ContextBlock).ContextElements.Elements[0].(*slack.TextBlockObject).Text)
+			}
+		case slack.MBTAction:
+			msg.ActionButtons = true
+			msg.SessionID = b.(*slack.ActionBlock).BlockID
+		default:
+			newMessageBlocks = append(newMessageBlocks, b)
+		}
 	}
 }
 
 // PromptSlackUser ..
-func (s *Server) PromptSlackUser(sessionID, message, userID string) error {
+func (s *Server) PromptSlackUser(msg SlackMessage, userID string) error {
 	log.WithFields(log.Fields{
-		"user_id": userID,
+		"session_id": msg.SessionID,
+		"user_id":    userID,
 	}).Debug("prompting slack user")
 
-	attachment := slack.Attachment{
-		CallbackID: sessionID,
-		Color:      "#3AA3E3",
-		Text:       "👋 what do you reckon?",
-		Actions: []slack.AttachmentAction{
-			{
-				Name:  "approve",
-				Text:  "Approve",
-				Type:  "button",
-				Style: "primary",
-			},
-			{
-				Name:  "deny",
-				Text:  "Deny",
-				Type:  "button",
-				Style: "danger",
-			},
-		},
-	}
+	_, _, err := s.Slack.PostMessage(userID, msg.Render())
+	return err
+}
 
-	_, _, err := s.Slack.PostMessage(userID, slack.MsgOptionText(message, false), slack.MsgOptionAttachments(attachment))
+// UpdateMessage ..
+func (s *Server) UpdateMessage(channelID, messageTimestamp string, msg SlackMessage) {
+	log.WithFields(log.Fields{
+		"session_id": msg.SessionID,
+	}).Debug("updating slack message")
+
+	_, _, _, err := s.Slack.UpdateMessage(channelID, messageTimestamp, msg.Render())
 	if err != nil {
-		return fmt.Errorf("posting notification message: %v", err)
+		log.WithField("error", err).Errorf("unable to update the slack message")
 	}
-
-	// channelID, messageTimestamp, err := c.Slack.PostMessage(userID, slack.MsgOptionText(permalink, false))
-	// 	if err != nil {
-	// 		log.WithFields(
-	// 			log.Fields{
-	// 				"user-id": userID,
-	// 				"error":   err.Error(),
-	// 			},
-	// 		).Error("posting message link to user")
-
-	// 		if err := c.SubmitCancellationMessages(messages); err != nil {
-	// 			return 1, err
-	// 		}
-	// 		return 1, err
-	// 	}
-
-	// 	messages.Users[userID]["link"] = client.MessageRef{
-	// 		ChannelID:        channelID,
-	// 		MessageTimestamp: messageTimestamp,
-	// 	}
-
-	// 	log.WithFields(
-	// 		log.Fields{
-	// 			"user-id": userID,
-	// 		},
-	// 	).Debug("posting actions message to user")
-	// 	channelID, messageTimestamp, err = c.Slack.PostMessage(userID, slack.MsgOptionAttachments(attachment))
-	// 	if err != nil {
-	// 		log.WithFields(
-	// 			log.Fields{
-	// 				"user-id": userID,
-	// 				"error":   err.Error(),
-	// 			},
-	// 		).Error("posting actions message to user")
-	// 		if err := c.SubmitCancellationMessages(messages); err != nil {
-	// 			return 1, err
-	// 		}
-	// 		return 1, err
-	// 	}
-
-	// 	messages.Users[userID]["action"] = client.MessageRef{
-	// 		ChannelID:        channelID,
-	// 		MessageTimestamp: messageTimestamp,
-	// 	}
-	// }
-	return nil
 }

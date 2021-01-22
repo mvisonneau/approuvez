@@ -13,6 +13,5 @@ and this project adheres to [0ver](https://0ver.org).
 
 - Command line binary combining client/server to use as part of CI jobs
 
-
 [Unreleased]: https://github.com/mvisonneau/approuvez/compare/v0.0.1...HEAD
 [v0.0.1]: https://github.com/mvisonneau/approuvez/tree/v0.0.1
