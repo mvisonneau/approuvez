@@ -6,6 +6,63 @@
 [![Build Status](https://github.com/mvisonneau/approuvez/workflows/test/badge.svg?branch=main)](https://github.com/mvisonneau/approuvez/actions)
 [![Coverage Status](https://coveralls.io/repos/github/mvisonneau/approuvez/badge.svg?branch=master)](https://coveralls.io/github/mvisonneau/approuvez?branch=master)
 
+This is a command line helper which aims to send a message to someone over Slack and block until a decision has been made. Depending on the decision, an exit code of 0 or 1 will be returned.
+
+- **approve** : `exit 0`
+- **deny** : `exit 1`
+
+My motivation for such tool was to be able to get a live confirmation from someone when some sensitive actions being done as part of an automated process are about to be made (ie: CI/CD)
+Its current implementation makes it agnostic of any kind of CI/CD platforms. However, for now it only **supports Slack** as the notification endpoint.
+
+## Quickstart
+
+Here is some documentation around [how to get started](/examples/quickstart.md) and tinker with it.
+
+[![asciicast](https://asciinema.org/a/386263.svg)](https://asciinema.org/a/386263)
+
+Associated / example messages:
+
+### Request
+
+```bash
+~$ approuvez ask \
+   --message "<your_message" \
+   --user "<user_id or user_email>" \
+   # Optionally you can add a link
+   --link-name "<whatever_suits_you>" \
+   --link-url "<url>"
+INFO[2021-01-22T17:16:30Z] session initiated successfully                session_id=a307db07-9993-4467-b11b-c9d7187dc542
+INFO[2021-01-22T17:16:30Z] message sent, waiting for user's decision
+```
+
+![request_message](./docs/images/request_message.png)
+
+### Approved
+
+```bash
+~$ approuvez ask <args>
+[..]
+INFO[2021-01-22T17:16:30Z] message sent, waiting for user's decisio
+INFO[2021-01-22T17:16:41Z] received response                             decision=APPROVE user_id=ULP000000 user_name=foo
+~$ echo $?
+0
+```
+
+![approved_message](./docs/images/approved_message.png)
+
+### Denied
+
+```bash
+~$ approuvez ask <args>
+[..]
+INFO[2021-01-22T17:16:30Z] message sent, waiting for user's decisio
+INFO[2021-01-22T17:16:41Z] received response                             decision=DENY user_id=ULP000000 user_name=foo
+~$ echo $?
+1
+```
+
+![denied_message](./docs/images/denied_message.png)
+
 ## Usage
 
 ```bash
@@ -69,6 +126,90 @@ OPTIONS:
 ## Architecture
 
 ![approuvez_architecture](docs/images/approuvez_architecture.png)
+
+## Install
+
+### Go
+
+```bash
+~$ go get -u github.com/mvisonneau/approuvez/cmd/approuvez
+```
+
+### Homebrew
+
+```bash
+~$ brew install mvisonneau/tap/approuvez
+```
+
+### Docker
+
+```bash
+~$ docker run -it --rm docker.io/mvisonneau/approuvez
+or
+~$ docker run -it --rm ghcr.io/mvisonneau/approuvez
+```
+
+### Scoop
+
+```bash
+~$ scoop bucket add https://github.com/mvisonneau/scoops
+~$ scoop install approuvez
+```
+
+### Binaries, DEB and RPM packages
+
+Have a look onto the [latest release page](https://github.com/mvisonneau/approuvez/releases/latest) to pick your flavor and version. Here is an helper to fetch the most recent one:
+
+```bash
+~$ export APPROUVEZ_VERSION=$(curl -s "https://api.github.com/repos/mvisonneau/approuvez/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+```
+
+```bash
+# Binary (eg: linux/amd64)
+~$ wget https://github.com/mvisonneau/approuvez/releases/download/${APPROUVEZ_VERSION}/approuvez_${APPROUVEZ_VERSION}_linux_amd64.tar.gz
+~$ tar zxvf approuvez_${APPROUVEZ_VERSION}_linux_amd64.tar.gz -C /usr/local/bin
+
+# DEB package (eg: linux/386)
+~$ wget https://github.com/mvisonneau/approuvez/releases/download/${APPROUVEZ_VERSION}/approuvez_${APPROUVEZ_VERSION}_linux_386.deb
+~$ dpkg -i approuvez_${APPROUVEZ_VERSION}_linux_386.deb
+
+# RPM package (eg: linux/arm64)
+~$ wget https://github.com/mvisonneau/approuvez/releases/download/${APPROUVEZ_VERSION}/approuvez_${APPROUVEZ_VERSION}_linux_arm64.rpm
+~$ rpm -ivh approuvez_${APPROUVEZ_VERSION}_linux_arm64.rpm
+```
+
+### HELM
+
+If you want to make the server run on [kubernetes](https://kubernetes.io/), there is a [helm chart](https://github.com/mvisonneau/helm-charts/tree/main/charts/approuvez) available for this purpose.
+
+You can check the chart's [values.yml](https://github.com/mvisonneau/helm-charts/blob/main/charts/approuvez/values.yaml) for complete configuration options.
+
+```bash
+# Add the helm repository to your local client
+~$ helm repo add mvisonneau https://charts.visonneau.fr
+
+# Minimal configuration to get it to run successfully
+~$ cat <<EOF > values.yml
+envVariables:
+  # You can refer to examples/quickstart.md whichwill guide you through how to obtain this value
+  - name: APPROUVEZ_SLACK_TOKEN
+    value: "<your-slack-app-oauth-token>" 
+  # For testing purposes you can use this value, otherwise, you should be setting
+  # APPROUVEZ_TLS_CA_CERT, APPROUVEZ_TLS_CERT, APPROUVEZ_TLS_KEY accordingly
+  - name: APPROUVEZ_TLS_DISABLE
+    value: "true"
+
+# You will also probably want to expose the service publically or configure
+# an ingress for this purpose
+EOF
+
+# Release the chart on your Kubernetes cluster
+~$ helm upgrade -i approuvez mvisonneau/approuvez -f values.yml
+```
+
+## Security
+
+You can [leverage mTLS](/examples/mutual_tls.md) to secure the gRPC connections between the client and the server. The interaction endpoint between slack and the server still needs some more love though!
 
 ## Develop / Test
 
