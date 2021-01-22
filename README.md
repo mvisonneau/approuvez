@@ -4,7 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/mvisonneau/approuvez)](https://goreportcard.com/report/github.com/mvisonneau/approuvez)
 [![Docker Pulls](https://img.shields.io/docker/pulls/mvisonneau/approuvez.svg)](https://hub.docker.com/r/mvisonneau/approuvez/)
 [![Build Status](https://github.com/mvisonneau/approuvez/workflows/test/badge.svg?branch=main)](https://github.com/mvisonneau/approuvez/actions)
-[![Coverage Status](https://coveralls.io/repos/github/mvisonneau/approuvez/badge.svg?branch=master)](https://coveralls.io/github/mvisonneau/approuvez?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/mvisonneau/approuvez/badge.svg?branch=main)](https://coveralls.io/github/mvisonneau/approuvez?branch=main)
 
 This is a command line helper which aims to send a message to someone over Slack and block until a decision has been made. Depending on the decision, an exit code of 0 or 1 will be returned.
 

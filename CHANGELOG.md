@@ -7,14 +7,17 @@ and this project adheres to [0ver](https://0ver.org).
 
 ## [Unreleased]
 
+## [v0.1.0] - 2021-01-22
+
 ### Added
 
 - gRPC server/client based architecture over mTLS
+- documentation!
 
 ### Changed/Removed
 
-- Reduced the featureset to release a more robust iteration of the app
 - Refactored and dropped the support/architecture based upon lambda/apigateway/websockets
+- Reduced the featureset to release a more robust iteration of the app
 - Updated all dependencies
 
 ## [v0.0.1] - 2020-12-23
@@ -26,6 +29,6 @@ and this project adheres to [0ver](https://0ver.org).
 - Lambda function to handle websocket interactions with the clients
 - End-to-end Terraform configuration for the AWS components
 
-[Unreleased]: https://github.com/mvisonneau/approuvez/compare/v0.0.1...HEAD
-
+[Unreleased]: https://github.com/mvisonneau/approuvez/compare/v0.1.0...HEAD
+[v0.1.0]: https://github.com/mvisonneau/approuvez/tree/v0.1.0
 [v0.0.1]: https://github.com/mvisonneau/approuvez/tree/v0.0.1
