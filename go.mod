@@ -6,7 +6,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/mvisonneau/go-helpers v0.0.1
-	github.com/sirupsen/logrus v1.7.0
+	github.com/sirupsen/logrus v1.8.1
 	github.com/slack-go/slack v0.8.0
 	github.com/soheilhy/cmux v0.1.4
 	github.com/stretchr/testify v1.7.0
