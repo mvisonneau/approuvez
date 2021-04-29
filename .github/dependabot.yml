@@ -1,0 +1,21 @@
+version: 2
+updates:
+- package-ecosystem: gomod
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "10:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: google.golang.org/grpc
+    versions:
+    - 1.36.0
+    - 1.36.1
+  - dependency-name: github.com/slack-go/slack
+    versions:
+    - 0.8.1
+    - 0.8.2
+  - dependency-name: github.com/sirupsen/logrus
+    versions:
+    - 1.7.1
+    - 1.8.0
