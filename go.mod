@@ -12,6 +12,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.3.0
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
-	google.golang.org/grpc v1.35.0
+	google.golang.org/grpc v1.37.1
 	google.golang.org/protobuf v1.25.0
 )
