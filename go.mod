@@ -7,7 +7,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/mvisonneau/go-helpers v0.0.1
 	github.com/sirupsen/logrus v1.7.0
-	github.com/slack-go/slack v0.8.0
+	github.com/slack-go/slack v0.9.4
 	github.com/soheilhy/cmux v0.1.4
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.3.0
