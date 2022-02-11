@@ -7,9 +7,12 @@ and this project adheres to [0ver](https://0ver.org).
 
 ## [Unreleased]
 
+## [v0.1.1] - 2022-02-11
+
 ### Added
 
 - Released OCIs to `quay.io`
+
 ### Changed
 
 - Updated golang to `1.17`
@@ -37,6 +40,7 @@ and this project adheres to [0ver](https://0ver.org).
 - Lambda function to handle websocket interactions with the clients
 - End-to-end Terraform configuration for the AWS components
 
-[Unreleased]: https://github.com/mvisonneau/approuvez/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/mvisonneau/approuvez/compare/v0.1.1...HEAD
+[v0.1.1]: https://github.com/mvisonneau/approuvez/tree/v0.1.1
 [v0.1.0]: https://github.com/mvisonneau/approuvez/tree/v0.1.0
 [v0.0.1]: https://github.com/mvisonneau/approuvez/tree/v0.0.1
