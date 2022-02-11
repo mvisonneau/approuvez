@@ -1,10 +1,10 @@
 # ✅ approuvez
 
-[![GoDoc](https://godoc.org/github.com/mvisonneau/approuvez?status.svg)](https://godoc.org/github.com/mvisonneau/approuvez)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/mvisonneau/approuvez)](https://pkg.go.dev/mod/github.com/mvisonneau/approuvez)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mvisonneau/approuvez)](https://goreportcard.com/report/github.com/mvisonneau/approuvez)
-[![Docker Pulls](https://img.shields.io/docker/pulls/mvisonneau/approuvez.svg)](https://hub.docker.com/r/mvisonneau/approuvez/)
-[![Build Status](https://github.com/mvisonneau/approuvez/workflows/test/badge.svg?branch=main)](https://github.com/mvisonneau/approuvez/actions)
+[![test](https://github.com/mvisonneau/approuvez/actions/workflows/test.yml/badge.svg)](https://github.com/mvisonneau/approuvez/actions/workflows/test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/mvisonneau/approuvez/badge.svg?branch=main)](https://coveralls.io/github/mvisonneau/approuvez?branch=main)
+[![release](https://github.com/mvisonneau/approuvez/actions/workflows/release.yml/badge.svg)](https://github.com/mvisonneau/approuvez/actions/workflows/release.yml)
 
 This is a command line helper which aims to send a message to someone over Slack and block until a decision has been made. Depending on the decision, an exit code of 0 or 1 will be returned.
 
