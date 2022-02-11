@@ -132,7 +132,7 @@ OPTIONS:
 ### Go
 
 ```bash
-~$ go get -u github.com/mvisonneau/approuvez/cmd/approuvez
+~$ go install github.com/mvisonneau/approuvez/cmd/approuvez@latest
 ```
 
 ### Homebrew
@@ -145,8 +145,8 @@ OPTIONS:
 
 ```bash
 ~$ docker run -it --rm docker.io/mvisonneau/approuvez
-or
 ~$ docker run -it --rm ghcr.io/mvisonneau/approuvez
+~$ docker run -it --rm quay.io/mvisonneau/approuvez
 ```
 
 ### Scoop

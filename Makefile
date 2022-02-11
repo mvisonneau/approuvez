@@ -4,25 +4,20 @@ TEST_FILES    := $(shell go list ./... | grep -v /lambdas)
 REPOSITORY    := mvisonneau/$(NAME)
 .DEFAULT_GOAL := help
 
-export GO111MODULE=on
-
 .PHONY: setup
 setup: ## Install required libraries/tools for build tasks
-	@command -v cover 2>&1 >/dev/null              || GO111MODULE=off go get -u -v golang.org/x/tools/cmd/cover
-	@command -v goimports 2>&1 >/dev/null          || GO111MODULE=off go get -u -v golang.org/x/tools/cmd/goimports
-	@command -v gosec 2>&1 >/dev/null              || GO111MODULE=off go get -u -v github.com/securego/gosec/cmd/gosec
-	@command -v goveralls 2>&1 >/dev/null          || GO111MODULE=off go get -u -v github.com/mattn/goveralls
-	@command -v ineffassign 2>&1 >/dev/null        || GO111MODULE=off go get -u -v github.com/gordonklaus/ineffassign
-	@command -v misspell 2>&1 >/dev/null           || GO111MODULE=off go get -u -v github.com/client9/misspell/cmd/misspell
-	@command -v protoc-gen-go-grpc 2>&1 >/dev/null || GO111MODULE=off go get -u -v google.golang.org/grpc/cmd/protoc-gen-go-grpc
-	@command -v revive 2>&1 >/dev/null             || GO111MODULE=off go get -u -v github.com/mgechev/revive
+	@command -v gofumpt 2>&1 >/dev/null     || go install mvdan.cc/gofumpt@v0.2.1
+	@command -v gosec 2>&1 >/dev/null       || go install github.com/securego/gosec/v2/cmd/gosec@v2.9.6
+	@command -v ineffassign 2>&1 >/dev/null || go install github.com/gordonklaus/ineffassign@v0.0.0-20210914165742-4cc7213b9bc8
+	@command -v misspell 2>&1 >/dev/null    || go install github.com/client9/misspell/cmd/misspell@v0.3.4
+	@command -v revive 2>&1 >/dev/null      || go install github.com/mgechev/revive@v1.1.3
 
 .PHONY: fmt
 fmt: setup ## Format source code
-	goimports -w $(FILES)
+	gofumpt -w $(FILES)
 
 .PHONY: lint
-lint: revive vet goimports ineffassign misspell gosec ## Run all lint related tests against the codebase
+lint: revive vet gofumpt ineffassign misspell gosec ## Run all lint related tests against the codebase
 
 .PHONY: revive
 revive: setup ## Test code syntax with revive
@@ -32,10 +27,10 @@ revive: setup ## Test code syntax with revive
 vet: ## Test code syntax with go vet
 	go vet ./...
 
-.PHONY: goimports
-goimports: setup ## Test code syntax with goimports
-	goimports -d $(FILES) > goimports.out
-	@if [ -s goimports.out ]; then cat goimports.out; rm goimports.out; exit 1; else rm goimports.out; fi
+.PHONY: gofumpt
+gofumpt: setup ## Test code syntax with gofumpt
+	gofumpt -d $(FILES) > gofumpt.out
+	@if [ -s gofumpt.out ]; then cat gofumpt.out; rm gofumpt.out; exit 1; else rm gofumpt.out; fi
 
 .PHONY: ineffassign
 ineffassign: setup ## Test code syntax for ineffassign
@@ -65,25 +60,26 @@ test: ## Run the tests against the codebase
 install: ## Build and install locally the binary (dev purpose)
 	go install ./cmd/$(NAME)
 
-.PHONY: build-local
-build-local: ## Build the binaries locally
+.PHONY: build
+build: ## Build the binaries using local GOOS
 	go build ./cmd/$(NAME)
 
-.PHONY: build
-build: ## Build the binaries
-	goreleaser release --snapshot --skip-publish --rm-dist
-
 .PHONY: release
-release: ## Build & release the binaries
+release: ## Build & release the binaries (stable)
+	git tag -d edge
 	goreleaser release --rm-dist
+
+.PHONY: prerelease
+prerelease: setup ## Build & prerelease the binaries (edge)
+	@\
+		REPOSITORY=$(REPOSITORY) \
+		NAME=$(NAME) \
+		GITHUB_TOKEN=$(GITHUB_TOKEN) \
+		.github/prerelease.sh
 
 .PHONY: clean
 clean: ## Remove binary if it exists
 	rm -f $(NAME)
-
-.PHONY: certs
-certs: ## Generate self-signed certificates
-	./tools/generate_certs.sh
 
 .PHONY: coverage
 coverage: ## Generates coverage report
@@ -93,6 +89,14 @@ coverage: ## Generates coverage report
 .PHONY: coverage-html
 coverage-html: ## Generates coverage report and displays it in the browser
 	go tool cover -html=coverage.out
+
+.PHONY: dev-env
+dev-env: ## Build a local development environment using Docker
+	@docker run -it --rm \
+		-v $(shell pwd):/go/src/github.com/mvisonneau/$(NAME) \
+		-w /go/src/github.com/mvisonneau/$(NAME) \
+		golang:1.17 \
+		/bin/bash -c 'make setup; make install; bash'
 
 .PHONY: is-git-dirty
 is-git-dirty: ## Tests if git is in a dirty state

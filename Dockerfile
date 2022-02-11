@@ -1,10 +1,8 @@
-ARG ARCH
-
 ##
 # BUILD CONTAINER
 ##
 
-FROM alpine:3.12 as builder
+FROM alpine:3.15 as builder
 
 RUN \
 apk add --no-cache ca-certificates
@@ -13,7 +11,7 @@ apk add --no-cache ca-certificates
 # RELEASE CONTAINER
 ##
 
-FROM ${ARCH}/busybox:1.32-glibc
+FROM busybox:1.35-glibc
 
 WORKDIR /
 

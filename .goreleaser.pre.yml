@@ -23,43 +23,19 @@ builds:
         goarch: arm64
 
 archives:
-  - name_template: '{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}'
+  - name_template: '{{ .ProjectName }}_edge_{{ .Os }}_{{ .Arch }}'
     format_overrides:
       - goos: windows
         format: zip
 
-nfpms:
-  - maintainer: &author Maxime VISONNEAU <maxime.visonneau@gmail.com>
-    description: &description CLI helper to obtain live confirmation from people over Slack
-    license: &license Apache 2.0
-    homepage: &homepage https://github.com/mvisonneau/approuvez
-    vendor: *author
-    file_name_template: '{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}'
-    formats:
-      - deb
-      - rpm
-
-brews:
-  - description: *description
-    homepage: *homepage
-    folder: Formula
-    tap:
-      owner: mvisonneau
-      name: homebrew-tap
-
-scoop:
-  description: *description
-  homepage: *homepage
-  license: *license
-  bucket:
-    owner: mvisonneau
-    name: scoops
+release:
+  disable: true
 
 dockers:
   - image_templates:
-      - 'docker.io/mvisonneau/approuvez:{{ .Tag }}-amd64'
-      - 'ghcr.io/mvisonneau/approuvez:{{ .Tag }}-amd64'
-      - 'quay.io/mvisonneau/approuvez:{{ .Tag }}-amd64'
+      - docker.io/mvisonneau/approuvez:latest-amd64
+      - ghcr.io/mvisonneau/approuvez:latest-amd64
+      - quay.io/mvisonneau/approuvez:latest-amd64
     ids: [approuvez]
     goarch: amd64
     use: buildx
@@ -75,9 +51,9 @@ dockers:
       - --label=org.opencontainers.image.licenses=Apache-2.0
 
   - image_templates:
-      - 'docker.io/mvisonneau/approuvez:{{ .Tag }}-arm64'
-      - 'ghcr.io/mvisonneau/approuvez:{{ .Tag }}-arm64'
-      - 'quay.io/mvisonneau/approuvez:{{ .Tag }}-arm64'
+      - docker.io/mvisonneau/approuvez:latest-arm64
+      - ghcr.io/mvisonneau/approuvez:latest-arm64
+      - quay.io/mvisonneau/approuvez:latest-arm64
     ids: [approuvez]
     goarch: arm64
     use: buildx
@@ -93,24 +69,20 @@ dockers:
       - --label=org.opencontainers.image.licenses=Apache-2.0
 
 docker_manifests:
-  - name_template: docker.io/mvisonneau/approuvez:{{ .Tag }}
+  - name_template: docker.io/mvisonneau/approuvez:latest
     image_templates:
-      - docker.io/mvisonneau/approuvez:{{ .Tag }}-amd64
-      - docker.io/mvisonneau/approuvez:{{ .Tag }}-arm64
+      - docker.io/mvisonneau/approuvez:latest-amd64
+      - docker.io/mvisonneau/approuvez:latest-arm64
 
-  - name_template: ghcr.io/mvisonneau/approuvez:{{ .Tag }}
+  - name_template: ghcr.io/mvisonneau/approuvez:latest
     image_templates:
-      - ghcr.io/mvisonneau/approuvez:{{ .Tag }}-amd64
-      - ghcr.io/mvisonneau/approuvez:{{ .Tag }}-arm64
+      - ghcr.io/mvisonneau/approuvez:latest-amd64
+      - ghcr.io/mvisonneau/approuvez:latest-arm64
 
-  - name_template: quay.io/mvisonneau/approuvez:{{ .Tag }}
+  - name_template: quay.io/mvisonneau/approuvez:latest
     image_templates:
-      - quay.io/mvisonneau/approuvez:{{ .Tag }}-amd64
-      - quay.io/mvisonneau/approuvez:{{ .Tag }}-arm64
-
-checksum:
-  name_template: '{{ .ProjectName }}_{{ .Tag }}_sha512sums.txt'
-  algorithm: sha512
+      - quay.io/mvisonneau/approuvez:latest-amd64
+      - quay.io/mvisonneau/approuvez:latest-arm64
 
 signs:
   - artifacts: checksum
@@ -123,6 +95,10 @@ signs:
         '--detach-sign',
         '${artifact}',
       ]
+
+checksum:
+  name_template: '{{ .ProjectName }}_edge_sha512sums.txt'
+  algorithm: sha512
 
 changelog:
   skip: true
